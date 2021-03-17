@@ -4,6 +4,44 @@
 
 namespace Common
 {
+    public enum AccountTypes
+    {
+        SEC_PLAYER         = 0,
+        SEC_GAMEMASTER1    = 1,
+        SEC_GAMEMASTER2    = 2,
+        SEC_GAMEMASTER3    = 3,
+        SEC_ADMINISTRATOR  = 4,
+        SEC_SUPERADMIN     = 5,
+        SEC_CONSOLE        = 6, // must be always last in list, accounts must have less security level always also
+    }
+
+    public enum LocaleConstant : byte
+    {
+        LOCALE_enUS = 0,
+        LOCALE_koKR = 1,
+        LOCALE_frFR = 2,
+        LOCALE_deDE = 3,
+        LOCALE_zhCN = 4,
+        LOCALE_zhTW = 5,
+        LOCALE_esES = 6,
+        LOCALE_esMX = 7,
+        LOCALE_ruRU = 8,
+
+        TOTAL_LOCALES
+    }
+
+    public enum TimeConstants
+    {
+        SECOND          = 1,
+        MINUTE          = 60,
+        HOUR            = MINUTE*60,
+        DAY             = HOUR*24,
+        WEEK            = DAY*7,
+        MONTH           = DAY*30,
+        YEAR            = MONTH*12,
+        IN_MILLISECONDS = 1000
+    }
+
     public static class CommonDefs
     {
         public const LocaleConstant DEFAULT_LOCALE = LocaleConstant.LOCALE_enUS;
