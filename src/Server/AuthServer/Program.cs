@@ -1,5 +1,6 @@
 ﻿using System;
 using Common;
+using static Common.Errors;
 
 namespace AuthServer
 {
@@ -7,6 +8,7 @@ namespace AuthServer
     {
         static void Main(string[] args)
         {
+            //Assert(false);
             Banner.Show("AuthServer", "FelCore 0.1.0",
                 (s) => {
                     Console.WriteLine(s);
