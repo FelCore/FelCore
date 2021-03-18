@@ -34,7 +34,7 @@ namespace Common
             return time.ToString("yyyy-MM-dd_HH:mm:ss");
         }
 
-        string getTimeStr()
+        public string getTimeStr()
         {
             return getTimeStr(MTime);
         }
