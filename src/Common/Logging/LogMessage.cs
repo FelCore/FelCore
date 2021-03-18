@@ -3,6 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
+using System.Text;
 using System.Runtime.CompilerServices;
 
 namespace Common
@@ -29,7 +30,7 @@ namespace Common
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static string getTimeStr(DateTime time)
+        public static string getTimeStr(DateTime time)
         {
             return time.ToString("yyyy-MM-dd_HH:mm:ss");
         }
@@ -49,7 +50,7 @@ namespace Common
         ///@ Returns size of the log message content in bytes
         public int Size()
         {
-            return (Prefix.Length + Text.Length) * sizeof(char);
+            return Encoding.UTF8.GetByteCount(Prefix) + Encoding.UTF8.GetByteCount(Text);
         }
     }
 }
