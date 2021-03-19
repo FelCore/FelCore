@@ -13,8 +13,7 @@ namespace Common
 {
     public class AppenderFile : Appender
     {
-        //public:
-        public static AppenderType type = APPENDER_FILE;
+        public const AppenderType type = APPENDER_FILE;
 
         public AppenderFile(byte id, string name, LogLevel level, AppenderFlags flags, string[] args) : base(id, name, level, flags)
         {
@@ -122,7 +121,7 @@ namespace Common
 
             return null;
         }
-        public override AppenderType getType() { return type; }
+        public override AppenderType Type => type;
 
         void CloseFile()
         {
@@ -132,7 +131,7 @@ namespace Common
             _logfile = null;
         }
 
-        protected override void _write(ref LogMessage message)
+        protected override void _Write(ref LogMessage message)
         {
             bool exceedMaxSize = _maxFileSize > 0 && (_fileSize + message.Size()) > _maxFileSize;
 

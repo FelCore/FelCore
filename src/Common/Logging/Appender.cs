@@ -36,34 +36,21 @@ namespace Common
             _disposed = true;
         }
 
-        public byte getId()
+        public byte Id => _id;
+
+        public string Name => _name;
+
+        public virtual AppenderType Type => AppenderType.APPENDER_NONE;
+
+        public LogLevel LogLevel
         {
-            return _id;
+            get { return _level; }
+            set { _level = value; }
         }
 
-        public string getName()
-        {
-            return _name;
-        }
+        public AppenderFlags Flags => _flags;
 
-        public virtual AppenderType getType() { return AppenderType.APPENDER_NONE; }
-
-        public LogLevel getLogLevel()
-        {
-            return _level;
-        }
-
-        public AppenderFlags getFlags()
-        {
-            return _flags;
-        }
-
-        public void setLogLevel(LogLevel level)
-        {
-            _level = level;
-        }
-
-        public void write(ref LogMessage message)
+        public void Write(ref LogMessage message)
         {
             if (_level == LOG_LEVEL_DISABLED || _level > message.Level)
                 return;
@@ -77,7 +64,7 @@ namespace Common
             }
 
             if ((_flags & APPENDER_FLAGS_PREFIX_LOGLEVEL) != 0 )
-                sb.AppendFormat("{0,-5} ", getLogLevelString(message.Level));
+                sb.AppendFormat("{0,-5} ", GetLogLevelString(message.Level));
 
             if ((_flags & APPENDER_FLAGS_PREFIX_LOGFILTERTYPE) != 0)
             {
@@ -88,10 +75,10 @@ namespace Common
 
             message.Prefix = sb.ToString();
 
-            _write(ref message);
+            _Write(ref message);
         }
 
-        public static string getLogLevelString(LogLevel level)
+        public static string GetLogLevelString(LogLevel level)
         {
             switch (level)
             {
@@ -112,9 +99,9 @@ namespace Common
             }
         }
 
-        public virtual void setRealmId(uint realmId) { }
+        public virtual void SetRealmId(uint realmId) { }
 
-        protected virtual void _write(ref LogMessage message) { }
+        protected virtual void _Write(ref LogMessage message) { }
 
         private byte _id;
         private string _name;
