@@ -4,10 +4,12 @@
 
 using System;
 using System.IO;
+using System.Text;
 using System.Threading;
 using static Common.LogLevel;
 using static Common.AppenderType;
 using static Common.AppenderFlags;
+using static Common.Log;
 
 namespace Common
 {
@@ -15,7 +17,7 @@ namespace Common
     {
         public AppenderFile(byte id, string name, LogLevel level, AppenderFlags flags, string[] args) : base(id, name, level, flags)
         {
-            _logDir = Log.Instance.LogsDir;
+            _logDir = sLog.LogsDir;
             if (args.Length < 4)
                 throw new InvalidAppenderArgsException(string.Format("Log::CreateAppenderFromConfig: Missing file name for appender {0}", name));
 
@@ -29,9 +31,9 @@ namespace Common
             {
                 var dot_pos = _fileName.LastIndexOf('.');
                 if (dot_pos != -1)
-                    _fileName.Insert(dot_pos, Log.Instance.LogsTimestamp ?? string.Empty);
+                    _fileName = _fileName.Insert(dot_pos, sLog.LogsTimestamp ?? string.Empty);
                 else
-                    _fileName += Log.Instance.LogsTimestamp;
+                    _fileName += sLog.LogsTimestamp;
             }
 
             if (5 < args.Length)
@@ -63,7 +65,7 @@ namespace Common
         public FileStream? OpenFile(string filename, string mode, bool backup)
         {
             string fullName = Path.Combine(string.IsNullOrEmpty(_logDir) ? "." : _logDir, filename);
-            if (backup)
+            if (backup && File.Exists(fullName))
             {
                 CloseFile();
 
@@ -88,7 +90,7 @@ namespace Common
                     fileAccess = FileAccess.Read;
                     break;
                 case "w":
-                    fileMode = FileMode.Open;
+                    fileMode = FileMode.OpenOrCreate;
                     fileAccess = FileAccess.Write;
                     break;
                 case "a":
@@ -146,12 +148,10 @@ namespace Common
 
                         using (var writer = new StreamWriter(file))
                         {
-                            writer.Write(string.Format("{0}{0}", message.Prefix, message.Text));
+                            writer.Write(string.Format("{0}{1}", message.Prefix, message.Text));
                             writer.Write(Environment.NewLine);
                         }
                         Interlocked.Add(ref _fileSize, message.Size());
-
-                        file.Dispose();
                     }
                     catch {}
 
@@ -167,9 +167,9 @@ namespace Common
             if (_logfile == null)
                 return;
 
-            using (var writer = new StreamWriter(_logfile))
+            using (var writer = new StreamWriter(_logfile, Encoding.UTF8, -1, true))
             {
-                writer.Write(string.Format("{0}{0}", message.Prefix, message.Text));
+                writer.Write(string.Format("{0}{1}", message.Prefix, message.Text));
                 writer.Write(Environment.NewLine);
             }
 

@@ -9,6 +9,7 @@ using static Common.LogLevel;
 using static Common.Errors;
 using static Common.AppenderFlags;
 using static Common.AppenderType;
+using static Common.ConfigMgr;
 
 namespace Common
 {
@@ -16,7 +17,7 @@ namespace Common
     {
         static Log? _instance;
 
-        public static Log Instance
+        public static Log sLog
         {
             get
             {
@@ -50,7 +51,7 @@ namespace Common
             //       HH     hour (2 digits 00-23)
             //       mm     minutes (2 digits 00-59)
             //       ss     seconds (2 digits 00-59)
-            return now.ToString("yyyy-MM-dd_HH:mm:ss");
+            return now.ToString("yyyy-MM-dd_HH-mm-ss");
         }
 
         Dictionary<byte, AppenderCreatorFn> _appenderFactory = new Dictionary<byte, AppenderCreatorFn>();
@@ -110,7 +111,7 @@ namespace Common
             // Format = type, level, flags, optional1, optional2
             // if type = File. optional1 = file and option2 = mode
             // if type = Console. optional1 = Color
-            var options = ConfigMgr.Instance.GetStringDefault(appenderName, "");
+            var options = sConfigMgr.GetStringDefault(appenderName, "");
 
             var tokens = options.Split(',', StringSplitOptions.TrimEntries);
 
@@ -171,7 +172,7 @@ namespace Common
 
             LogLevel level = LOG_LEVEL_DISABLED;
 
-            var options = ConfigMgr.Instance.GetStringDefault(appenderName, "");
+            var options = sConfigMgr.GetStringDefault(appenderName, "");
             var name = appenderName.Substring(7);
 
             if (string.IsNullOrEmpty(options))
@@ -208,7 +209,7 @@ namespace Common
             if (level < _lowestLogLevel)
                 _lowestLogLevel = level;
 
-            logger = new Logger(name, level);
+            _loggers[name] = logger = new Logger(name, level);
             //Console.WriteLine(string.Format("Log::CreateLoggerFromConfig: Created Logger {0}, Level {1}", name, level));
 
             tokens = tokens[1].Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
@@ -228,7 +229,7 @@ namespace Common
 
         private void ReadAppendersFromConfig()
         {
-            List<string> keys = ConfigMgr.Instance.GetKeysByString("Appender.");
+            List<string> keys = sConfigMgr.GetKeysByString("Appender.");
 
             foreach (var appenderName in keys)
                 CreateAppenderFromConfig(appenderName);
@@ -236,7 +237,7 @@ namespace Common
 
         private void ReadLoggersFromConfig()
         {
-            var keys = ConfigMgr.Instance.GetKeysByString("Logger.");
+            var keys = sConfigMgr.GetKeysByString("Logger.");
             foreach (var loggerName in keys)
                 CreateLoggerFromConfig(loggerName);
 
@@ -289,7 +290,7 @@ namespace Common
 
             _lowestLogLevel = LOG_LEVEL_FATAL;
             _appenderId = 0;
-            _logsDir = ConfigMgr.Instance.GetStringDefault("LogsDir", "");
+            _logsDir = sConfigMgr.GetStringDefault("LogsDir", "");
 
             ReadAppendersFromConfig();
             ReadLoggersFromConfig();
@@ -453,48 +454,48 @@ namespace Common
         public static void FEL_LOG_TRACE(string filter, string format, params object?[] args)
         {
 #if !PERFORMANCE_PROFILING
-            if (Instance.ShouldLog(filter, LOG_LEVEL_TRACE))
-                Instance.outMessage(filter, LOG_LEVEL_TRACE, format, args);
+            if (sLog.ShouldLog(filter, LOG_LEVEL_TRACE))
+                sLog.outMessage(filter, LOG_LEVEL_TRACE, format, args);
 #endif
         }
 
         public static void FEL_LOG_DEBUG(string filter, string format, params object?[] args)
         {
 #if !PERFORMANCE_PROFILING
-            if (Instance.ShouldLog(filter, LOG_LEVEL_DEBUG))
-                Instance.outMessage(filter, LOG_LEVEL_DEBUG, format, args);
+            if (sLog.ShouldLog(filter, LOG_LEVEL_DEBUG))
+                sLog.outMessage(filter, LOG_LEVEL_DEBUG, format, args);
 #endif
         }
 
         public static void FEL_LOG_INFO(string filter, string format, params object?[] args)
         {
 #if !PERFORMANCE_PROFILING
-            if (Instance.ShouldLog(filter, LOG_LEVEL_INFO))
-                Instance.outMessage(filter, LOG_LEVEL_INFO, format, args);
+            if (sLog.ShouldLog(filter, LOG_LEVEL_INFO))
+                sLog.outMessage(filter, LOG_LEVEL_INFO, format, args);
 #endif
         }
 
         public static void FEL_LOG_WARN(string filter, string format, params object?[] args)
         {
 #if !PERFORMANCE_PROFILING
-            if (Instance.ShouldLog(filter, LOG_LEVEL_WARN))
-                Instance.outMessage(filter, LOG_LEVEL_WARN, format, args);
+            if (sLog.ShouldLog(filter, LOG_LEVEL_WARN))
+                sLog.outMessage(filter, LOG_LEVEL_WARN, format, args);
 #endif
         }
 
         public static void FEL_LOG_ERROR(string filter, string format, params object?[] args)
         {
 #if !PERFORMANCE_PROFILING
-            if (Instance.ShouldLog(filter, LOG_LEVEL_ERROR))
-                Instance.outMessage(filter, LOG_LEVEL_ERROR, format, args);
+            if (sLog.ShouldLog(filter, LOG_LEVEL_ERROR))
+                sLog.outMessage(filter, LOG_LEVEL_ERROR, format, args);
 #endif
         }
 
         public static void FEL_LOG_FATAL(string filter, string format, params object?[] args)
         {
 #if !PERFORMANCE_PROFILING
-            if (Instance.ShouldLog(filter, LOG_LEVEL_FATAL))
-                Instance.outMessage(filter, LOG_LEVEL_FATAL, format, args);
+            if (sLog.ShouldLog(filter, LOG_LEVEL_FATAL))
+                sLog.outMessage(filter, LOG_LEVEL_FATAL, format, args);
 #endif
         }
     }

@@ -13,7 +13,7 @@ namespace Common
     {
         static ConfigMgr? _instance;
 
-        public static ConfigMgr Instance
+        public static ConfigMgr sConfigMgr
         {
             get
             {
@@ -61,6 +61,13 @@ namespace Common
                 }
 
                 config = ret;
+            }
+            catch (System.IO.FileNotFoundException)
+            {
+                error = $"Configuration file {file} not found!";
+                config = null;
+
+                return false;
             }
             catch (ParserException e)
             {
@@ -165,7 +172,7 @@ namespace Common
             lock (_configLock)
             {
                 foreach (var child in _config)
-                    if (child.Name == name)
+                    if (child.Name.StartsWith(name))
                         keys.Add(child.Name);
 
                 return keys;
