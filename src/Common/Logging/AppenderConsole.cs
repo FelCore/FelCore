@@ -11,7 +11,6 @@ namespace Common
 {
     public class AppenderConsole : Appender
     {
-        public const AppenderType type = APPENDER_CONSOLE;
         public static int NUM_COLOR_TYPES = Enum.GetValues<ColorTypes>().Length;
 
         public AppenderConsole(byte id, string name, LogLevel level, AppenderFlags flags, string[] args)
@@ -55,7 +54,7 @@ namespace Common
             _colored = true;
         }
 
-        public override AppenderType Type => type;
+        public static new AppenderType Type => APPENDER_CONSOLE;
 
         private void SetColor(ColorTypes color)
         {

@@ -40,7 +40,8 @@ namespace Common
 
         public string Name => _name;
 
-        public virtual AppenderType Type => AppenderType.APPENDER_NONE;
+        public static AppenderType Type => AppenderType.APPENDER_NONE;
+
 
         public LogLevel LogLevel
         {

@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using SharpConfig;
+using static Common.Log;
 
 namespace Common
 {
@@ -140,8 +141,8 @@ namespace Common
                 return result;
             else
             {
-                //TC_LOG_ERROR("server.loading", "Bad value defined for name %s in config file %s, going to use '%s' instead",
-                //    name.c_str(), _filename.c_str(), def ? "true" : "false");
+                FEL_LOG_ERROR("server.loading", "Bad value defined for name {0} in config file {1}, going to use '{2}' instead",
+                    name, _filename, def ? "true" : "false");
                 return def;
             }
         }
@@ -180,12 +181,12 @@ namespace Common
             {
                 return _config[name].GetValueOrDefault<T>(def, true);
             }
-            catch (SettingValueCastException ex)
+            catch (SettingValueCastException)
             {
                 if (!quiet)
                 {
-                    //TC_LOG_WARN("server.loading", "Missing name %s in config file %s, add \"%s = %s\" to this file",
-                    //    name.c_str(), _filename.c_str(), name.c_str(), std::to_string(def).c_str());
+                    FEL_LOG_WARN("server.loading", "Missing name %s in config file %s, add \"%s = %s\" to this file",
+                        name, _filename, name, def == null ? "" : def.ToString());
                 }
             }
 

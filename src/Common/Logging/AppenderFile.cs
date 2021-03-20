@@ -13,8 +13,6 @@ namespace Common
 {
     public class AppenderFile : Appender
     {
-        public const AppenderType type = APPENDER_FILE;
-
         public AppenderFile(byte id, string name, LogLevel level, AppenderFlags flags, string[] args) : base(id, name, level, flags)
         {
             _logDir = Log.Instance.LogsDir;
@@ -64,7 +62,7 @@ namespace Common
         }
         public FileStream? OpenFile(string filename, string mode, bool backup)
         {
-            string fullName = Path.Combine(_logDir ?? ".", filename);
+            string fullName = Path.Combine(string.IsNullOrEmpty(_logDir) ? "." : _logDir, filename);
             if (backup)
             {
                 CloseFile();
@@ -121,7 +119,7 @@ namespace Common
 
             return null;
         }
-        public override AppenderType Type => type;
+        public static new AppenderType Type => APPENDER_FILE;
 
         void CloseFile()
         {
