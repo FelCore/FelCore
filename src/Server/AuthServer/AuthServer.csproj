@@ -11,4 +11,10 @@
     <ProjectReference Include="..\Database\Database.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="authserver.conf.dist">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
