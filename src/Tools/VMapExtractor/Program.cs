@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Tools.MapExtractor
+namespace Tools.VMapExtractor
 {
     class Program
     {
