@@ -90,7 +90,7 @@ namespace Common
                     fileAccess = FileAccess.Read;
                     break;
                 case "w":
-                    fileMode = FileMode.OpenOrCreate;
+                    fileMode = FileMode.Create;
                     fileAccess = FileAccess.Write;
                     break;
                 case "a":
@@ -102,7 +102,7 @@ namespace Common
                     fileAccess = FileAccess.ReadWrite;
                     break;
                 case "w+":
-                    fileMode = FileMode.Open;
+                    fileMode = FileMode.Create;
                     fileAccess = FileAccess.ReadWrite;
                     break;
                 case "a+":
