@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using Common;
 using static Common.Log;
 using static Common.ConfigMgr;
@@ -10,14 +12,31 @@ namespace AuthServer
 {
     class Program
     {
-        /// <summary>
-        /// Fel Core Auth Server
-        /// </summary>
-        /// <param name="config" alias="c">Configuration file path</param>
-        static int Main(string config = "authserver.conf")
+        static int Main(string[] args)
         {
+            var rootCommand = new RootCommand
+            {
+                new Option<string>(
+                    new string[] { "--config", "-c" },
+                    getDefaultValue: () => "authserver.conf",
+                    description: "Configuration file path")
+            };
+            rootCommand.Description = "Fel Core Auth Server";
+
+            string configPath = "";
+
+            rootCommand.Handler = CommandHandler.Create<string>((config) =>
+            {
+                configPath = config;
+            });
+
+            rootCommand.Invoke(args);
+
+            if (string.IsNullOrEmpty(configPath)) // Handle --help or --version option here.
+                return 0;
+
             string configError = "";
-            if (!sConfigMgr.LoadInitial(config,
+            if (!sConfigMgr.LoadInitial(configPath,
                                         new List<string>(Environment.GetCommandLineArgs()),
                                         ref configError))
             {
