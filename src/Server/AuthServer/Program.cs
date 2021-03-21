@@ -16,8 +16,6 @@ namespace AuthServer
         /// <param name="config" alias="c">Configuration file path</param>
         static int Main(string config = "authserver.conf")
         {
-            Console.WriteLine($"The value for --config is: {config}");
-
             string configError = "";
             if (!sConfigMgr.LoadInitial(config,
                                         new List<string>(Environment.GetCommandLineArgs()),
