@@ -17,7 +17,7 @@ namespace Common
             Text = text;
             Prefix = string.Empty;
             Param1 = string.Empty;
-            MTime = Time.Now;
+            MTime = Time.LocalNow;
         }
         public LogMessage(LogLevel level, string type, string text, string param1)
         {
@@ -26,7 +26,7 @@ namespace Common
             Text = text;
             Prefix = string.Empty;
             Param1 = param1;
-            MTime = Time.Now;
+            MTime = Time.LocalNow;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
