@@ -11,7 +11,7 @@ using static Common.Log;
 using static Common.ConfigMgr;
 using static Common.Errors;
 
-namespace AuthServer
+namespace Server.AuthServer
 {
     class Program
     {
