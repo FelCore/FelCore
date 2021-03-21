@@ -45,7 +45,7 @@ namespace AuthServer
             }
 
             //sLog.RegisterAppender<AppenderDB>();
-            sLog.Initialize();
+            sLog.Initialize(true);
 
             //Assert(false);
             Banner.Show("AuthServer", "FelCore 0.1.0",
@@ -56,6 +56,10 @@ namespace AuthServer
                     FEL_LOG_INFO("server.authserver", "Some extra info!");
                 }
             );
+
+            System.Threading.Thread.Sleep(1000);
+
+            sLog.SetSynchronous();
 
             return 0;
         }

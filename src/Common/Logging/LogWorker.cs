@@ -59,6 +59,7 @@ namespace Common
             if (disposing)
             {
                 _cancelationToken = true;
+                _queue.Cancel();
 
                 foreach(var thread in _workerThreads)
                     thread.Join();
