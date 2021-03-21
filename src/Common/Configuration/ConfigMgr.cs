@@ -52,7 +52,7 @@ namespace Common
             {
                 var ret = Configuration.LoadFromFile(file);
 
-                if (ret.mSections.Count == 0)
+                if (ret.SectionCount < 2)
                 {
                     error = "empty file (" + file + ")";
 
@@ -96,7 +96,7 @@ namespace Common
                     return false;
 
                 // Since we're using only one section per config file, we skip the section and have direct property access
-                _config = config.mSections[0];
+                _config = config[1];
 
                 return true;
             }
@@ -109,7 +109,7 @@ namespace Common
             if (!LoadFile(file, out config, ref error) || config == null)
                 return false;
 
-            foreach (var setting in config.mSections[0])
+            foreach (var setting in config[1])
                 _config.Add(setting);
 
             if (keepOnReload)
