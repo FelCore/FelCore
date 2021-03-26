@@ -4,29 +4,26 @@
 
 using System;
 using System.Threading;
+using Common;
 
-namespace Common
+namespace Server.Database
 {
-    public class LogWorker : IDisposable
+    class DatabaseWorker : IDisposable
     {
-        Thread[] _workerThreads;
-        volatile bool _cancelationToken;
-        ProducerConsumerQueue<LogOperation> _queue;
+        Thread _workerThread;
+        InterlockedBoolean _cancelationToken;
+        ProducerConsumerQueue<SqlOperation> _queue;
+        MySqlConnectionProxyBase _connectionProxy;
 
         private bool _disposed;
 
-        public LogWorker(ProducerConsumerQueue<LogOperation> newQueue, int threads = 1)
+        public DatabaseWorker(ProducerConsumerQueue<SqlOperation> newQueue, MySqlConnectionProxyBase connectionProxy)
         {
             _queue = newQueue;
-            _cancelationToken = false;
+            _connectionProxy = connectionProxy;
 
-            _workerThreads = new Thread[threads <= 0 ? 1 : threads];
-
-            for(int i = 0; i < threads; i++)
-            {
-                _workerThreads[i] = new Thread(WorkerThread) { Name = $"Log Worker Thread#{i}", IsBackground = true };
-                _workerThreads[i].Start();
-            }
+            _workerThread = new Thread(WorkerThread) { Name = "DB Worker Thread", IsBackground = true };
+            _workerThread.Start();
         }
 
         void WorkerThread()
@@ -34,15 +31,16 @@ namespace Common
             if (_queue == null)
                 return;
 
-            for (; ; )
+            for (;;)
             {
-                LogOperation? operation;
+                SqlOperation? operation;
 
                 _queue.WaitAndPop(out operation);
 
                 if (_cancelationToken || operation == null)
                     return;
 
+                operation.SetConnection(_connectionProxy);
                 operation.Call();
             }
         }
@@ -58,11 +56,11 @@ namespace Common
 
             if (disposing)
             {
-                _cancelationToken = true;
-                _queue.Cancel();
-
-                foreach(var thread in _workerThreads)
-                    thread.Join();
+                if (!_cancelationToken.Exchange(true))
+                {
+                    _queue.Cancel();
+                    _workerThread.Join();
+                }
             }
 
             _disposed = true;

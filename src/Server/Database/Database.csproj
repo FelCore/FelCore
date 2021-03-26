@@ -3,6 +3,19 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>Server.Database</RootNamespace>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\Common.csproj" />
+    <ProjectReference Include="..\Shared\Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\ThirdParty\MySqlConnector\src\MySqlConnector\**\*.cs" LinkBase="Libs/MySqlConnector" />
+    <Compile Remove="..\..\ThirdParty\MySqlConnector\src\MySqlConnector\bin\**\*.cs" />
+    <Compile Remove="..\..\ThirdParty\MySqlConnector\src\MySqlConnector\obj\**\*.cs" />
+  </ItemGroup>
 
 </Project>

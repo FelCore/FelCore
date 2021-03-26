@@ -149,7 +149,6 @@ BanExpiryCheckInterval = 60
 #
 #    SourceDirectory
 #        Description: The path to your FelCore source directory.
-#                     If the path is left empty, the built-in CMAKE_SOURCE_DIR is used.
 #        Example:     "../FelCore"
 #        Default:     ""
 
@@ -158,7 +157,6 @@ SourceDirectory  = ""
 #
 #    MySQLExecutable
 #        Description: The path to your MySQL CLI binary.
-#                     If the path is left empty, built-in path from cmake is used.
 #        Example:     "C:/Program Files/MySQL/MySQL Server 5.6/bin/mysql.exe"
 #                     "mysql.exe"
 #                     "/usr/bin/mysql"

@@ -34,7 +34,7 @@ namespace Server.Shared
             if (_thread != null)
                 return false;
 
-            _thread = new Thread(Run);
+            _thread = new Thread(Run) { Name = $"NetworkThread<{typeof(TSocketType).Name}>" };
             _thread.Start();
             return true;
         }
