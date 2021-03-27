@@ -37,11 +37,11 @@ namespace Server.Database.Updater
         {
             switch (_dbTypeName)
             {
-                case "LoginDatabase":
+                case "LoginDatabaseConnection":
                     return "Updates.Auth";
-                case "CharacterDatabase":
+                case "CharacterDatabaseConnection":
                     return "Updates.Character";
-                case "WorldDatabase":
+                case "WorldDatabaseConnection":
                     return "Updates.World";
             }
 
@@ -52,11 +52,11 @@ namespace Server.Database.Updater
         {
             switch (_dbTypeName)
             {
-                case "LoginDatabase":
+                case "LoginDatabaseConnection":
                     return "Auth";
-                case "CharacterDatabase":
+                case "CharacterDatabaseConnection":
                     return "Character";
-                case "WorldDatabase":
+                case "WorldDatabaseConnection":
                     return "World";
             }
 
@@ -68,13 +68,13 @@ namespace Server.Database.Updater
             string baseDBFile = "";
             switch (_dbTypeName)
             {
-                case "LoginDatabase":
-                    baseDBFile = "/sql/base/auth_database.sql";
+                case "LoginDatabaseConnection":
+                    baseDBFile = "/sql/base/fel_auth_database.sql";
                     break;
-                case "CharacterDatabase":
-                    baseDBFile = "/sql/base/characters_database.sql";
+                case "CharacterDatabaseConnection":
+                    baseDBFile = "/sql/base/fel_characters_database.sql";
                     break;
-                case "WorldDatabase":
+                case "WorldDatabaseConnection":
                     baseDBFile = DatabaseLoader.FULL_DATABASE;
                     break;
             }
@@ -86,11 +86,11 @@ namespace Server.Database.Updater
         {
             switch (_dbTypeName)
             {
-                case "LoginDatabase":
+                case "LoginDatabaseConnection":
                     return (updateMask & (uint)DatabaseTypeFlags.DATABASE_LOGIN) != 0;
-                case "CharacterDatabase":
+                case "CharacterDatabaseConnection":
                     return (updateMask & (uint)DatabaseTypeFlags.DATABASE_CHARACTER) != 0;
-                case "WorldDatabase":
+                case "WorldDatabaseConnection":
                     return (updateMask & (uint)DatabaseTypeFlags.DATABASE_WORLD) != 0;
             }
 
@@ -101,7 +101,7 @@ namespace Server.Database.Updater
         {
             switch (_dbTypeName)
             {
-                case "WorldDatabase":
+                case "WorldDatabaseConnection":
                     return BaseLocation.LOCATION_DOWNLOAD;
                 default:
                     return BaseLocation.LOCATION_REPOSITORY;
