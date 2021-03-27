@@ -148,6 +148,11 @@ namespace Common
                 return result;
             else
             {
+                if (val == "1")
+                    return true;
+                else if (val == "0")
+                    return false;
+
                 FEL_LOG_ERROR("server.loading", "Bad value defined for name {0} in config file {1}, going to use '{2}' instead",
                     name, _filename, def ? "true" : "false");
                 return def;
