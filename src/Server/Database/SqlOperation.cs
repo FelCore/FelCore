@@ -16,10 +16,10 @@ namespace Server.Database
     public struct SqlElementUnion
     {
         [FieldOffset(0)]
-        public PreparedStatement? Stmt;
+        public PreparedStatementBase? Stmt;
 
         [FieldOffset(0)]
-        public string Query;
+        public string? Query;
     }
 
     //- Type specifier of our element data

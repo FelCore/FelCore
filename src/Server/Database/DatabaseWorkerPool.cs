@@ -7,6 +7,7 @@ using System.Threading;
 using System.Collections.Generic;
 using MySqlConnector;
 using Common;
+using Common.Extensions;
 using static Common.Log;
 using static Common.Errors;
 
@@ -43,6 +44,8 @@ namespace Server.Database
         List<T>[] _connections = new List<T>[(int)IDX_SIZE];
 
         MySqlConnectionInfo? _connectionInfo;
+
+        byte[] _preparedStatementSize = new byte[0];
 
         byte _async_threads, _synch_threads;
 
@@ -100,7 +103,7 @@ namespace Server.Database
         /// <para>Enqueues a one-way SQL operation in prepared statement format that will be executed asynchronously.</para>
         /// <para>Statement must be prepared with CONNECTION_ASYNC flag.</para>
         /// </summary>
-        public void Execute(PreparedStatement stmt)
+        public void Execute(PreparedStatement<T> stmt)
         {
             var task = new PreparedStatementTask(stmt);
             Enqueue(task);
@@ -136,7 +139,7 @@ namespace Server.Database
         /// <para>Directly executes a one-way SQL operation in prepared statement format, that will block the calling thread until finished.</para>
         /// <para>Statement must be prepared with the CONNECTION_SYNCH flag.</para>
         /// </summary>
-        public void DirectExecute(PreparedStatement stmt)
+        public void DirectExecute(PreparedStatement<T> stmt)
         {
             var connection = GetFreeConnection();
             connection.Execute(stmt);
@@ -180,7 +183,7 @@ namespace Server.Database
         /// <para>Directly executes an SQL query in prepared format that will block the calling thread until finished.</para>
         /// <para>Statement must be prepared with CONNECTION_SYNCH flag.</para>
         /// </summary>
-        public PreparedQueryResult? Query(PreparedStatement stmt)
+        public PreparedQueryResult? Query(PreparedStatement<T> stmt)
         {
             var connection = GetFreeConnection();
             var ret = connection.Query(stmt);
@@ -206,7 +209,7 @@ namespace Server.Database
         //! Enqueues a query in prepared format that will set the value of the PreparedQueryResultFuture return object as soon as the query is executed.
         //! The return value is then processed in ProcessQueryCallback methods.
         //! Statement must be prepared with CONNECTION_ASYNC flag.
-        public QueryCallback AsyncQuery(PreparedStatement stmt)
+        public QueryCallback AsyncQuery(PreparedStatement<T> stmt)
         {
             var task = new PreparedStatementTask(stmt, true);
             // Store future result before enqueueing - task might get already processed and deleted before returning from this method
@@ -340,7 +343,7 @@ namespace Server.Database
         /// <para>Method used to execute ad-hoc statements in a diverse context.</para>
         /// <para>Will be wrapped in a transaction if valid object is present, otherwise executed standalone.</para>
         /// </summary>
-        public void ExecuteOrAppend(SqlTransaction<T> trans, PreparedStatement stmt)
+        public void ExecuteOrAppend(SqlTransaction<T> trans, PreparedStatement<T> stmt)
         {
             if (trans == null)
                 Execute(stmt);
@@ -504,6 +507,29 @@ namespace Server.Database
                     }
                     else
                         connection.Unlock();
+
+                    var preparedSize = connection.PreparedStatementQueries.Length;
+                    if (_preparedStatementSize.Length < preparedSize)
+                        Array.Resize(ref _preparedStatementSize, preparedSize);
+
+                    for (var i = 0; i < preparedSize; ++i)
+                    {
+                        // already set by another connection
+                        // (each connection only has prepared statements of it's own type sync/async)
+                        if (_preparedStatementSize[i] > 0)
+                            continue;
+
+                        var stmt = connection.PreparedStatementQueries[i];
+                        if (stmt is not null)
+                        {
+                            var paramCount = stmt.ParameterCount;
+
+                            // FelCore only supports uint8 indices.
+                            Assert(paramCount < byte.MaxValue);
+
+                            _preparedStatementSize[i] = (byte)paramCount;
+                        }
+                    }
                 }
             }
 
@@ -548,9 +574,10 @@ namespace Server.Database
         /// <summary>
         /// Get a prepared statement object for usage in upper level code.
         /// </summary>
-        public PreparedStatement GetPreparedStatement(Statements index)
+        public PreparedStatement<T> GetPreparedStatement(Statements index)
         {
-            return _connections[(int)IDX_SYNCH][0].GetPreparedStatement(index);
+            var val = index.AsInteger<Statements, int>();
+            return new PreparedStatement<T>(val, _preparedStatementSize[val]);
         }
 
         public void Dispose()

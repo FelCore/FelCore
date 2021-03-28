@@ -13,15 +13,15 @@ namespace Server.Database
 {
     public class SqlQueryHolderBase
     {
-        (PreparedStatement, PreparedQueryResult?)[] _queries = new (PreparedStatement, PreparedQueryResult?)[0];
+        (PreparedStatementBase, PreparedQueryResult?)[] _queries = new (PreparedStatementBase, PreparedQueryResult?)[0];
 
-        public (PreparedStatement, PreparedQueryResult?)[] Queries => _queries;
+        public (PreparedStatementBase, PreparedQueryResult?)[] Queries => _queries;
 
         public void SetSize(int size)
         {
             Array.Resize(ref _queries, size);
         }
-        protected bool SetPreparedQueryImpl(int index, PreparedStatement stmt)
+        protected bool SetPreparedQueryImpl(int index, PreparedStatementBase stmt)
         {
             if (_queries.Length <= index)
             {
@@ -51,7 +51,7 @@ namespace Server.Database
 
     public class SqlQueryHolder<T> : SqlQueryHolderBase where T : MySqlConnectionProxyBase
     {
-        public bool SetPreparedQuery(int index, PreparedStatement stmt)
+        public bool SetPreparedQuery(int index, PreparedStatement<T> stmt)
         {
             return SetPreparedQueryImpl(index, stmt);
         }

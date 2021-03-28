@@ -9,20 +9,31 @@ using static Common.Errors;
 
 namespace Server.Database
 {
-    public class PreparedStatement
+    public class PreparedStatementBase
     {
-        public readonly string CommandText;
+        private int _index;
+        public int Index => _index;
+
         public readonly object?[] Parameters;
 
-        private int _parameterCount;
-        public int ParameterCount => _parameterCount;
+        private byte _parameterCount;
+        public byte ParameterCount => _parameterCount;
 
-        public PreparedStatement(string commandText, int parameterCount)
+        private string? _commandText;
+        public string? CommandText => _commandText;
+
+
+        public PreparedStatementBase(int index, byte parameterCount)
         {
-            CommandText = commandText;
+            _index = index;
 
             _parameterCount = parameterCount;
             Parameters = new object?[_parameterCount];
+        }
+
+        public void Bind(PreparedStatementQuery preparedQuery)
+        {
+            _commandText = preparedQuery.Sql;
         }
 
         public void SetValue(int index, object value)
@@ -32,17 +43,20 @@ namespace Server.Database
 
         public void Clear()
         {
-            for (var i = 0; i < _parameterCount; i++)
+            for (byte i = 0; i < _parameterCount; i++)
                 Parameters[i] = null;
         }
 
         public string GetQueryString()
         {
-            var sb = new StringBuilder(CommandText);
+            if (string.IsNullOrEmpty(_commandText))
+                return string.Empty;
+
+            var sb = new StringBuilder(_commandText);
             int startIndex = 0;
             foreach(var val in Parameters)
             {
-                var index = CommandText.IndexOf('?', startIndex);
+                var index = _commandText.IndexOf('?', startIndex);
                 if (index != -1)
                 {
                     startIndex = index;
@@ -56,12 +70,19 @@ namespace Server.Database
         }
     }
 
+    public class PreparedStatement<T> : PreparedStatementBase where T : MySqlConnectionProxyBase 
+    {
+        public PreparedStatement(int index, byte parameterCount) : base(index, parameterCount)
+        {
+        }
+    }
+
     public class PreparedStatementTask : SqlOperation
     {
-        PreparedStatement _stmt;
+        PreparedStatementBase _stmt;
         TaskCompletionSource<PreparedQueryResult?>? _result;
 
-        public PreparedStatementTask(PreparedStatement stmt, bool hasResult = false)
+        public PreparedStatementTask(PreparedStatementBase stmt, bool hasResult = false)
         {
             _stmt = stmt;
 

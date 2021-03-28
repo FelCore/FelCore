@@ -53,13 +53,25 @@ namespace Server.Database
         }
     }
 
+    public class PreparedStatementQuery
+    {
+        public PreparedStatementQuery(string sql, int parameterCount)
+        {
+            Sql = sql;
+            ParameterCount = parameterCount;
+        }
+
+        public readonly string? Sql;
+        public readonly int ParameterCount;
+    }
+
     public class MySqlConnectionProxyBase : IDisposable
     {
         MySqlConnection? _connection;
         public MySqlConnection? MySqlConnection => _connection;
 
-        protected static (string?, int)[] _preparedQueries = new (string?, int)[0];
-        public static (string?, int)[] PreparedQueries => _preparedQueries;
+        protected PreparedStatementQuery?[] _preparedStatementQueries = new PreparedStatementQuery?[0];
+        public PreparedStatementQuery?[] PreparedStatementQueries => _preparedStatementQueries;
 
         protected bool _reconnecting; //! Are we reconnecting?
         protected bool _prepareError; //! Was there any error while preparing statements?
@@ -152,15 +164,19 @@ namespace Server.Database
 
         protected virtual void DoPrepareStatements() { }
 
-        protected PreparedStatement GetPreparedStatement(int index)
+        protected PreparedStatementQuery GetPreparedStatement(int index)
         {
-            var sql = _preparedQueries[index].Item1;
-            if (sql == null)
+            Assert(index < _preparedStatementQueries.Length, string.Format("Tried to access invalid prepared statement index %u (max index {0}) on database `{1}`, connection type: {2}",
+                index, _preparedStatementQueries.Length, _connectionInfo.Database, _connectionFlags));
+
+            var ret = _preparedStatementQueries[index];
+            if (ret is null)
             {
-                Assert(false, string.Format("Prepared statement {0} is null in database {1}", index, GetType().Name));
-                throw new Exception();
+                FEL_LOG_ERROR("sql.sql", "Could not fetch prepared statement {0} on database `{1}`, connection type: {2}.",
+                    index, _connectionInfo.Database, _connectionFlags);
+                Assert(false);
             }
-            return new PreparedStatement(sql, _preparedQueries[index].Item2);
+            return ret!;
         }
 
         protected void PrepareStatement(int index, string sql, ConnectionFlags flags)
@@ -175,9 +191,6 @@ namespace Server.Database
             // i.e. don't prepare async statements on synchronous connections
             // to save memory that will not be used.
             if ((_connectionFlags & flags) == 0)
-                return;
-
-            if (_preparedQueries[index].Item1 != null) // Already prepared
                 return;
 
             try
@@ -196,7 +209,7 @@ namespace Server.Database
                     }
 
                     var parameters = stmt.Statements[0].Parameters;
-                    _preparedQueries[index] = (sql, parameters == null ? 0 : parameters.Length);
+                    _preparedStatementQueries[index] = new(sql, parameters == null ? 0 : parameters.Length);
                 }
             }
             catch (Exception ex)
@@ -246,9 +259,13 @@ namespace Server.Database
             return false;
         }
 
-        public bool Execute(PreparedStatement stmt)
+        public bool Execute(PreparedStatementBase stmt)
         {
             if (_connection == null) return false;
+
+            int index = stmt.Index;
+            var preparedQuery = GetPreparedStatement(index);
+            stmt.Bind(preparedQuery);
 
             try
             {
@@ -257,7 +274,7 @@ namespace Server.Database
                 using (var cmd = _connection.CreateCommand())
                 {
                     cmd.CommandText = stmt.CommandText;
-                    for (var i = 0; i < stmt.ParameterCount; i++)
+                    for (byte i = 0; i < stmt.ParameterCount; i++)
                         cmd.Parameters.AddWithValue($"@{i.ToString()}", stmt.Parameters[i]);
 
                     cmd.ExecuteNonQuery();
@@ -332,9 +349,13 @@ namespace Server.Database
             return null;
         }
 
-        public PreparedQueryResult? Query(PreparedStatement stmt)
+        public PreparedQueryResult? Query(PreparedStatementBase stmt)
         {
             if (_connection == null) return null;
+
+            int index = stmt.Index;
+            var preparedQuery = GetPreparedStatement(index);
+            stmt.Bind(preparedQuery);
 
             try
             {
@@ -343,7 +364,7 @@ namespace Server.Database
                 using (var cmd = _connection.CreateCommand())
                 {
                     cmd.CommandText = stmt.CommandText;
-                    for (var i = 0; i < stmt.ParameterCount; i++)
+                    for (byte i = 0; i < stmt.ParameterCount; i++)
                         cmd.Parameters.AddWithValue($"@{i.ToString()}", stmt.Parameters[i]);
 
                     var ret = new PreparedQueryResult(cmd.ExecuteReader());
@@ -416,7 +437,7 @@ namespace Server.Database
                     {
                         var sql = query.Element.Query;
                         Assert(!string.IsNullOrEmpty(sql));
-                        if (!Execute(sql))
+                        if (!Execute(sql!))
                         {
                             FEL_LOG_WARN("sql.sql", "Transaction aborted. {0} queries not executed.", transaction.Queries.Count);
                             var errorCode = _lastError;
@@ -566,7 +587,7 @@ namespace Server.Database
         {
         }
 
-        public PreparedStatement GetPreparedStatement(Statements index)
+        public PreparedStatementQuery GetPreparedStatement(Statements index)
         {
             return GetPreparedStatement(index.AsInteger<Statements, int>());
         }

@@ -22,7 +22,7 @@ namespace Server.Database
         protected List<SqlElementData> _queries = new List<SqlElementData>();
         public List<SqlElementData> Queries => _queries;
 
-        protected void AppendPreparedStatement(PreparedStatement stmt)
+        protected void AppendPreparedStatement(PreparedStatementBase stmt)
         {
             SqlElementData data = new SqlElementData();
             data.Type = SQL_ELEMENT_PREPARED;
@@ -59,7 +59,7 @@ namespace Server.Database
 
     public class SqlTransaction<T> : SqlTransactionBase where T : MySqlConnectionProxyBase
     {
-        public void Append(PreparedStatement statement)
+        public void Append(PreparedStatement<T> statement)
         {
             AppendPreparedStatement(statement);
         }

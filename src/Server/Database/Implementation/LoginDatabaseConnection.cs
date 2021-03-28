@@ -30,7 +30,7 @@ namespace Server.Database
         protected override void DoPrepareStatements()
         {
             if (!_reconnecting)
-                Array.Resize(ref _preparedQueries, (int)MAX_LOGINDATABASE_STATEMENTS);
+                Array.Resize(ref _preparedStatementQueries, (int)MAX_LOGINDATABASE_STATEMENTS);
 
             PrepareStatement(LOGIN_SEL_REALMLIST, "SELECT id, name, address, localAddress, localSubnetMask, port, icon, flag, timezone, allowedSecurityLevel, population, gamebuild FROM realmlist WHERE flag <> 3 ORDER BY name", CONNECTION_SYNCH);
         }
