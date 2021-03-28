@@ -68,8 +68,14 @@ namespace Server.Database
             return false;
         }
 
-        public Row? Fetch()
+        public Row Fetch()
         {
+            if (_currentRow is null)
+            {
+                Assert(false);
+                throw new Exception();
+            }
+
             return _currentRow;
         }
 
