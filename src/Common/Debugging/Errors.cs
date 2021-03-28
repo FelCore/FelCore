@@ -13,7 +13,7 @@ namespace Common
         {
             Trace.Assert(condition, message);
             if (!condition)
-                Environment.Exit(1); // Ensure app exit on assertion failure when debugger attacked.
+                Environment.FailFast(message); // Ensure app exit on assertion failure when debugger attacked.
         }
 
         public static void DebugAssert(bool condition, string? message = null)
@@ -21,7 +21,7 @@ namespace Common
             Trace.Assert(condition, message);
 #if DEBUG
             if (!condition)
-                Environment.Exit(1); // Ensure app exit on assertion failure when debugger attacked.
+                Environment.FailFast(message); // Ensure app exit on assertion failure when debugger attacked.
 #endif
         }
     }

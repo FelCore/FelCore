@@ -373,7 +373,7 @@ namespace Server.Database
                         case IDX_SYNCH:
                             return (T?)Activator.CreateInstance(typeof(T), _connectionInfo);
                         default:
-                            Environment.FailFast(null);
+                            Assert(false);
                             break;
                     }
 
@@ -382,7 +382,7 @@ namespace Server.Database
 
                 if (connection == null)
                 {
-                    Environment.FailFast($"Consturct instance of type {typeof(T).Name} failed!");
+                    Assert(false, $"Consturct instance of type {typeof(T).Name} failed!");
                     return 0;
                 }
 

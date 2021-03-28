@@ -488,7 +488,7 @@ namespace Server.Database
                         {
                             FEL_LOG_FATAL("sql.sql", "Could not re-prepare statements!");
                             Thread.Sleep(10000);
-                            Environment.FailFast(null);
+                            Assert(false);
                         }
 
                         FEL_LOG_INFO("sql.sql", "Successfully reconnected to {0} @{1}:{2} ({3}).",
@@ -507,7 +507,7 @@ namespace Server.Database
 
                         // We could also initiate a shutdown through using std::raise(SIGTERM)
                         Thread.Sleep(10000);
-                        Environment.FailFast(null);
+                        Assert(false);
                     }
                     else
                     {
@@ -527,12 +527,12 @@ namespace Server.Database
                 case MySqlErrorCode.NoSuchTable:
                     FEL_LOG_ERROR("sql.sql", "Your database structure is not up to date. Please make sure you've executed all queries in the sql/updates folders.");
                     Thread.Sleep(10000);
-                    Environment.FailFast(null);
+                    Assert(false);
                     return false;
                 case MySqlErrorCode.ParseError:
                     FEL_LOG_ERROR("sql.sql", "Error while parsing SQL. Core fix required.");
                     Thread.Sleep(10000);
-                    Environment.FailFast(null);
+                    Assert(false);
                     return false;
                 default:
                     FEL_LOG_ERROR("sql.sql", "Unhandled MySQL errno {0}. Unexpected behaviour possible.", error);
