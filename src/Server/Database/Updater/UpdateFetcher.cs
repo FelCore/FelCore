@@ -318,7 +318,7 @@ namespace Server.Database.Updater
             DirectoryStorage directories = new DirectoryStorage();
 
             var result = _retrieve("SELECT `path`, `state` FROM `updates_include`");
-            if (result == null || !result)
+            if (result == null)
                 return directories;
 
             do
@@ -351,7 +351,7 @@ namespace Server.Database.Updater
             var map = new Dictionary<string, AppliedFileEntry>();
 
             var result = _retrieve("SELECT `name`, `hash`, `state`, UNIX_TIMESTAMP(`timestamp`) FROM `updates` ORDER BY `name` ASC");
-            if (result == null || !result)
+            if (result == null)
                 return map;
 
             do

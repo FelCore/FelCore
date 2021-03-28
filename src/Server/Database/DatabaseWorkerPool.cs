@@ -154,7 +154,7 @@ namespace Server.Database
 
             var result = connection.Query(sql);
             connection.Unlock();
-            if (result == null || result.IsEmpty() || !result.NextRow())
+            if (result == null || !result.NextRow())
             {
                 if (result != null)
                     result.Dispose();
@@ -185,11 +185,6 @@ namespace Server.Database
             var connection = GetFreeConnection();
             var ret = connection.Query(stmt);
             connection.Unlock();
-
-            if (ret == null || ret.IsEmpty())
-            {
-                return null;
-            }
 
             return ret;
         }

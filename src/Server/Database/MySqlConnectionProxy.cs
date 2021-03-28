@@ -299,11 +299,16 @@ namespace Server.Database
                 using (var cmd = _connection.CreateCommand())
                 {
                     cmd.CommandText = sql;
-                    var ret = new QueryResult(cmd.ExecuteReader());
+
+                    var reader = cmd.ExecuteReader();
 
                     FEL_LOG_DEBUG("sql.sql", "[{0} ms] SQL: {1}", (Time.Now - now).TotalMilliseconds, sql);
 
-                    return ret;
+                    if (!reader.IsClosed && reader.HasRows)
+                        return new QueryResult(reader);
+
+                    reader.Close();
+                    return null;
                 }
             }
             catch (MySqlException ex)
@@ -342,10 +347,9 @@ namespace Server.Database
                         cmd.Parameters.AddWithValue($"@{i.ToString()}", stmt.Parameters[i]);
 
                     var ret = new PreparedQueryResult(cmd.ExecuteReader());
-
                     FEL_LOG_DEBUG("sql.sql", "[{0} ms] SQL: {1}", (Time.Now - now).TotalMilliseconds, stmt.GetQueryString());
 
-                    return ret;
+                    return ret.GetRowCount() == 0 ? null : ret;
                 }
             }
             catch (MySqlException ex)

@@ -214,8 +214,11 @@ namespace Server.Database.Updater
         {
             {
                 var result = Retrieve(pool, "SHOW TABLES");
-                if (result != null && !result.IsEmpty())
-                    return true;
+                using (result)
+                {
+                    if (result != null)
+                        return true;
+                }
             }
 
             if (!CheckExecutable())

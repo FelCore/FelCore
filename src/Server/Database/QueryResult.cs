@@ -33,16 +33,11 @@ namespace Server.Database
         bool _disposed;
         public bool Disposed => _disposed;
 
-        public QueryResult() {}
+        private QueryResult() {}
 
         public QueryResult(MySqlDataReader reader)
         {
             _reader = reader;
-        }
-
-        public static implicit operator bool(QueryResult obj)
-        {
-            return !obj.IsEmpty();
         }
 
         public bool IsNull(int column)
@@ -57,14 +52,6 @@ namespace Server.Database
         }
 
         public int GetFieldCount() { return _reader == null ? 0 : _reader.FieldCount; }
-
-        public bool IsEmpty()
-        {
-            if (_reader == null)
-                return true;
-
-            return _reader.IsClosed || !_reader.HasRows;
-        }
 
         public bool NextRow()
         {
@@ -131,11 +118,6 @@ namespace Server.Database
             reader.Close();
         }
 
-        public static implicit operator bool(PreparedQueryResult obj)
-        {
-            return !obj.IsEmpty();
-        }
-
         public bool IsNull(int column)
         {
             return _rows[_rowPosition].IsDBNull(column);
@@ -144,11 +126,6 @@ namespace Server.Database
         public int GetRowCount() { return _rowCount; }
 
         public int GetFieldCount() { return _fieldCount; }
-
-        public bool IsEmpty()
-        {
-            return _rowCount == 0 || _fieldCount == 0;
-        }
 
         public bool NextRow()
         {

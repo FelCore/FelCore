@@ -79,7 +79,7 @@ namespace Server.Database
                 var result = Conn.Query(_stmt);
 
                 _result.SetResult(result);
-                return result != null && !result.IsEmpty();
+                return result != null;
             }
 
             return Conn.Execute(_stmt);
