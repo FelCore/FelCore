@@ -13,6 +13,7 @@ namespace Server.Database
     public enum LoginStatements : int
     {
         LOGIN_SEL_REALMLIST,
+        LOGIN_INS_LOG,
         MAX_LOGINDATABASE_STATEMENTS
     }
 
@@ -33,6 +34,7 @@ namespace Server.Database
                 Array.Resize(ref _preparedStatementQueries, (int)MAX_LOGINDATABASE_STATEMENTS);
 
             PrepareStatement(LOGIN_SEL_REALMLIST, "SELECT id, name, address, localAddress, localSubnetMask, port, icon, flag, timezone, allowedSecurityLevel, population, gamebuild FROM realmlist WHERE flag <> 3 ORDER BY name", CONNECTION_SYNCH);
+            PrepareStatement(LOGIN_INS_LOG, "INSERT INTO logs (time, realm, type, level, string) VALUES (?, ?, ?, ?, ?)", CONNECTION_ASYNC);
         }
     }
 }

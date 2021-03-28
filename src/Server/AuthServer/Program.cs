@@ -52,7 +52,7 @@ namespace Server.AuthServer
                 return 1;
             }
 
-            //sLog.RegisterAppender<AppenderDB>();
+            sLog.RegisterAppender<AppenderDB>();
             sLog.Initialize();
 
             Banner.Show("AuthServer", "FelCore 0.1.0",
