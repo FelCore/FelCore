@@ -363,6 +363,8 @@ namespace Server.Database.Updater
             }
             while (result.NextRow());
 
+            result.Dispose();
+
             return map;
         }
 
