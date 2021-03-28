@@ -56,8 +56,6 @@ namespace Server.Database
             return _reader.IsDBNull(column);
         }
 
-        public int GetRowCount() { return _reader == null ? 0 : _reader.RecordsAffected; }
-
         public int GetFieldCount() { return _reader == null ? 0 : _reader.FieldCount; }
 
         public bool IsEmpty()
@@ -65,7 +63,7 @@ namespace Server.Database
             if (_reader == null)
                 return true;
 
-            return _reader.IsClosed || _reader.RecordsAffected == 0;
+            return _reader.IsClosed || !_reader.HasRows;
         }
 
         public bool NextRow()
