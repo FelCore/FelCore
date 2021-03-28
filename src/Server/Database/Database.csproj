@@ -13,9 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\ThirdParty\MySqlConnector\src\MySqlConnector\**\*.cs" LinkBase="Libs/MySqlConnector" />
-    <Compile Remove="..\..\ThirdParty\MySqlConnector\src\MySqlConnector\bin\**\*.cs" />
-    <Compile Remove="..\..\ThirdParty\MySqlConnector\src\MySqlConnector\obj\**\*.cs" />
+    <Compile Include="..\..\..\ThirdParty\MySqlConnector\src\MySqlConnector\**\*.cs" LinkBase="Libs/MySqlConnector" />
+    <Compile Remove="..\..\..\ThirdParty\MySqlConnector\src\MySqlConnector\bin\**\*.cs" />
+    <Compile Remove="..\..\..\ThirdParty\MySqlConnector\src\MySqlConnector\obj\**\*.cs" />
   </ItemGroup>
 
 </Project>
