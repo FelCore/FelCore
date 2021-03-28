@@ -369,14 +369,14 @@ namespace Server.Database
             for (byte i = 0; i < numConnections; ++i)
             {
                 // Create the connection
-                var connection = new Func<MySqlConnectionProxy<Statements>?>(() => {
+                var connection = new Func<T?>(() => {
 
                     switch (type)
                     {
                         case IDX_ASYNC:
-                            return new MySqlConnectionProxy<Statements>(_queue, _connectionInfo);
+                            return (T?)Activator.CreateInstance(typeof(T), _queue, _connectionInfo);
                         case IDX_SYNCH:
-                            return new MySqlConnectionProxy<Statements>(_connectionInfo);
+                            return (T?)Activator.CreateInstance(typeof(T), _connectionInfo);
                         default:
                             Environment.FailFast(null);
                             break;
@@ -387,7 +387,7 @@ namespace Server.Database
 
                 if (connection == null)
                 {
-                    Assert(false);
+                    Environment.FailFast($"Consturct instance of type {typeof(T).Name} failed!");
                     return 0;
                 }
 
@@ -447,7 +447,9 @@ namespace Server.Database
                 return 0;
             }
 
-            FEL_LOG_INFO("sql.driver", "Opening DatabasePool '{0}'. Asynchronous connections: {1}, synchronous connections: {2}.", GetDatabaseName(), _async_threads, _synch_threads);
+            FEL_LOG_INFO("sql.driver", "Opening DatabasePool '{0}'. " +
+                "Asynchronous connections: {1}, synchronous connections: {2}.",
+                GetDatabaseName(), _async_threads, _synch_threads);
 
             var error = OpenConnections(IDX_ASYNC, _async_threads);
 
@@ -474,7 +476,8 @@ namespace Server.Database
                 conn.Dispose();
             _connections[(int)IDX_ASYNC].Clear();
 
-            FEL_LOG_INFO("sql.driver", "Asynchronous connections on DatabasePool '{0}' terminated. Proceeding with synchronous connections.", GetDatabaseName());
+            FEL_LOG_INFO("sql.driver", "Asynchronous connections on DatabasePool '{0}' terminated. " +
+                "Proceeding with synchronous connections.", GetDatabaseName());
 
             //! Shut down the synchronous connections
             //! There's no need for locking the connection, because DatabaseWorkerPool<>::Close
