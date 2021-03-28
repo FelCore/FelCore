@@ -10,6 +10,7 @@ using Common;
 using static Common.Log;
 using static Common.ConfigMgr;
 using static Common.Errors;
+using static Common.ProcessPriority;
 using Server.Database;
 using static Server.AuthServer.AuthSocketMgr;
 
@@ -97,6 +98,9 @@ namespace Server.AuthServer
                 FEL_LOG_ERROR("server.authserver", "Failed to initialize network");
                 return 1;
             }
+
+            // Set process priority according to configuration settings
+            SetProcessPriority("server.authserver", sConfigMgr.GetIntDefault(CONFIG_PROCESSOR_AFFINITY, 0), sConfigMgr.GetBoolDefault(CONFIG_HIGH_PRIORITY, false));
 
             Console.CancelKeyPress += delegate(object? sender, ConsoleCancelEventArgs e) {
                 e.Cancel = true;
