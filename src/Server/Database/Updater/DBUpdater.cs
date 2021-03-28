@@ -128,7 +128,7 @@ namespace Server.Database.Updater
 
             var answer = Console.ReadLine();
 
-            if (!string.IsNullOrEmpty(answer) && (answer.StartsWith('y') || answer.StartsWith('Y')))
+            if (!string.IsNullOrEmpty(answer) && !(answer.StartsWith('y') || answer.StartsWith('Y')))
                 return false;
 
             FEL_LOG_INFO("sql.updates", "Creating database \"{0}\"...", connectionInfo.Database);
