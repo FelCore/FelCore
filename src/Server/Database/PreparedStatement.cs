@@ -56,13 +56,13 @@ namespace Server.Database
             int startIndex = 0;
             foreach(var val in Parameters)
             {
-                var index = _commandText.IndexOf('?', startIndex);
+                var index = sb.ToString().IndexOf('?', startIndex);
                 if (index != -1)
                 {
                     startIndex = index;
 
                     sb.Remove(index, 1);
-                    sb.Insert(index, val);
+                    sb.Insert(index, $"'{val}'");
                 }
             }
 
