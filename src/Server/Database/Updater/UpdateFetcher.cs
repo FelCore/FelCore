@@ -323,9 +323,9 @@ namespace Server.Database.Updater
 
             do
             {
-                var reader = result.Reader;
+                var field = result.Fetch();
 
-                var path = reader.GetString(0);
+                var path = field.GetString(0);
                 if (path.Substring(0, 1) == "$")
                     path = Path.Combine(_sourceDirectory, path.Substring(1));
 
@@ -335,7 +335,7 @@ namespace Server.Database.Updater
                     continue;
                 }
 
-                directories.Add(new DirectoryEntry(path, reader.GetString(1).ToEnum<State>()));
+                directories.Add(new DirectoryEntry(path, field.GetString(1).ToEnum<State>()));
 
                 FEL_LOG_TRACE("sql.updates", "Added applied file \"{0}\" from remote.", Path.GetFileName(path));
 
@@ -356,9 +356,9 @@ namespace Server.Database.Updater
 
             do
             {
-                var reader = result.Reader;
-                var entry = new AppliedFileEntry(reader.GetString(0), reader.GetString(1),
-                    reader.GetString(2).ToEnum<State>(), reader.GetUInt32(3));
+                var field = result.Fetch();
+                var entry = new AppliedFileEntry(field.GetString(0), field.GetString(1),
+                    field.GetString(2).ToEnum<State>(), field.GetUInt32(3));
                 map.Add(entry.Name, entry);
             }
             while (result.NextRow());

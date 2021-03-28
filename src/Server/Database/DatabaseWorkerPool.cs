@@ -200,12 +200,7 @@ namespace Server.Database
             var result = task.GetFuture();
             Enqueue(task);
 
-            if (result == null)
-            {
-                Assert(false);
-                throw new Exception();
-            }
-            return new QueryCallback(result);
+            return new QueryCallback(result!);
         }
 
         //! Enqueues a query in prepared format that will set the value of the PreparedQueryResultFuture return object as soon as the query is executed.

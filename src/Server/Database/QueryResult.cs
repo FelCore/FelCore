@@ -14,20 +14,6 @@ namespace Server.Database
     {
         MySqlDataReader? _reader;
 
-        public MySqlDataReader Reader
-        {
-            get
-            {
-                if (_reader == null)
-                {
-                    Assert(false, "Could not reader field reader when sql result is empty!");
-                    throw new Exception();
-                }
-
-                return _reader;
-            }
-        }
-
         Row? _currentRow;
 
         bool _disposed;
