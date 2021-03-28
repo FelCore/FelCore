@@ -13,9 +13,11 @@ namespace Server.Shared
 {
     public class SocketMgr<SocketType> where SocketType : SocketBase
     {
-        AsyncAcceptor? _acceptor;
-        List<NetworkThread<SocketType>>? _threads;
-        int _threadCount;
+        protected AsyncAcceptor? _acceptor;
+        protected NetworkThread<SocketType>[]? _threads;
+        protected int _threadCount;
+
+        protected SocketMgr() {}
 
         public virtual bool StartNetwork(string bindIp, int port, int threadCount = 1)
         {
@@ -109,7 +111,7 @@ namespace Server.Shared
             }
         }
 
-        protected virtual List<NetworkThread<SocketType>>? CreateThreads() { return null; }
+        protected virtual NetworkThread<SocketType>[]? CreateThreads() { return null; }
 
         public int GetNetworkThreadCount() { return _threadCount; }
 
