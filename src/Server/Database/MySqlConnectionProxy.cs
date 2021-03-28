@@ -167,7 +167,7 @@ namespace Server.Database
         {
             if (_connection == null)
             {
-                Assert(false);
+                Assert(false, "MySQL Connection must be open!");
                 return;
             }
 
@@ -402,13 +402,8 @@ namespace Server.Database
                     case SQL_ELEMENT_PREPARED:
                     {
                         var stmt = query.Element.Stmt;
-                        if (stmt == null)
-                        {
-                            Assert(false);
-                            return MySqlErrorCode.None;
-                        }
 
-                        if (!Execute(stmt))
+                        if (!Execute(stmt!))
                         {
                             FEL_LOG_WARN("sql.sql", "Transaction aborted. {0} queries not executed.", transaction.Queries.Count);
                             var errorCode = _lastError;
