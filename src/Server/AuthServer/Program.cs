@@ -11,11 +11,14 @@ using static Common.Log;
 using static Common.ConfigMgr;
 using static Common.Errors;
 using Server.Database;
+using static Server.AuthServer.AuthSocketMgr;
 
 namespace Server.AuthServer
 {
     class Program
     {
+        static bool Stop;
+
         static int Main(string[] args)
         {
             var rootCommand = new RootCommand
@@ -49,9 +52,8 @@ namespace Server.AuthServer
             }
 
             //sLog.RegisterAppender<AppenderDB>();
-            sLog.Initialize(true);
+            sLog.Initialize();
 
-            //Assert(false);
             Banner.Show("AuthServer", "FelCore 0.1.0",
                 (s) =>
                 {
@@ -59,7 +61,7 @@ namespace Server.AuthServer
                 },
                 () =>
                 {
-                    FEL_LOG_INFO("server.authserver", "Some extra info!");
+                    FEL_LOG_INFO("server.authserver", "Using configuration file {0}.", sConfigMgr.Filename);
                 }
             );
 
@@ -80,9 +82,36 @@ namespace Server.AuthServer
             if (!StartDB())
                 return 1;
 
-            System.Threading.Thread.Sleep(10);
+            // Start the listening port (acceptor) for auth connections
+            var port = sConfigMgr.GetIntDefault("RealmServerPort", 3724);
+            if (port < 0 || port > 0xFFFF)
+            {
+                FEL_LOG_ERROR("server.authserver", "Specified port out of allowed range (1-65535)");
+                return 1;
+            }
 
-            sLog.SetSynchronous();
+            var bindIp = sConfigMgr.GetStringDefault("BindIP", "0.0.0.0");
+
+            if (!sAuthSocketMgr.StartNetwork(bindIp, port))
+            {
+                FEL_LOG_ERROR("server.authserver", "Failed to initialize network");
+                return 1;
+            }
+
+            Console.CancelKeyPress += delegate(object? sender, ConsoleCancelEventArgs e) {
+                e.Cancel = true;
+                Stop = true;
+            };
+
+            while (!Stop)
+            {
+                System.Threading.Thread.Sleep(100);
+            }
+
+            FEL_LOG_INFO("server.authserver", "Halting process...");
+
+            StopDB();
+            sAuthSocketMgr.StopNetwork();
 
             return 0;
         }
