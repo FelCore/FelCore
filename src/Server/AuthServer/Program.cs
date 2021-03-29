@@ -3,6 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
@@ -107,10 +108,18 @@ namespace Server.AuthServer
                 Stop = true;
             };
 
+            var dbPingInterval = sConfigMgr.GetIntDefault("MaxPingTime", 30) * 1000;
+            var mysqlKeepAliveTimer = new Timer((s) => {
+                FEL_LOG_INFO("server.authserver", "Ping MySQL to keep connection alive");
+                DB.LoginDatabase.KeepAlive();
+            }, null, dbPingInterval, dbPingInterval);
+
             while (!Stop)
             {
-                System.Threading.Thread.Sleep(100);
+                Thread.Sleep(100);
             }
+
+            mysqlKeepAliveTimer.Dispose();
 
             FEL_LOG_INFO("server.authserver", "Halting process...");
 
