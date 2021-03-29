@@ -13,6 +13,7 @@ using static Common.ConfigMgr;
 using static Common.Errors;
 using static Common.ProcessPriority;
 using Server.Database;
+using static Server.Database.LoginStatements;
 using static Server.AuthServer.AuthSocketMgr;
 
 namespace Server.AuthServer
@@ -114,12 +115,19 @@ namespace Server.AuthServer
                 DB.LoginDatabase.KeepAlive();
             }, null, dbPingInterval, dbPingInterval);
 
+            var banExpiryCheckInterval = sConfigMgr.GetIntDefault("BanExpiryCheckInterval", 60) * 1000;
+            var banExpiryCheckTimer = new Timer((s) => {
+                DB.LoginDatabase.Execute(DB.LoginDatabase.GetPreparedStatement(LOGIN_DEL_EXPIRED_IP_BANS));
+                DB.LoginDatabase.Execute(DB.LoginDatabase.GetPreparedStatement(LOGIN_UPD_EXPIRED_ACCOUNT_BANS));
+            }, null, banExpiryCheckInterval, banExpiryCheckInterval);
+
             while (!Stop)
             {
                 Thread.Sleep(100);
             }
 
             mysqlKeepAliveTimer.Dispose();
+            banExpiryCheckTimer.Dispose();
 
             FEL_LOG_INFO("server.authserver", "Halting process...");
 
