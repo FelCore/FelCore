@@ -388,7 +388,14 @@ namespace Server.Database
                 if (error != MySqlErrorCode.None)
                 {
                     // Failed to open a connection or invalid version, abort and cleanup
+                    foreach (var item in _connections[(int)type])
+                        item.Dispose();
                     _connections[(int)type].Clear();
+                    connection.Dispose();
+
+                    if (type == IDX_ASYNC) // Rebuild queue since it was canceled on connection.Dispose()
+                        _queue = new ProducerConsumerQueue<SqlOperation>();
+
                     return error;
                 }
                 else
