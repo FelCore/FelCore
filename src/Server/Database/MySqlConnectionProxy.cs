@@ -166,7 +166,7 @@ namespace Server.Database
 
         protected PreparedStatementQuery GetPreparedStatement(int index)
         {
-            Assert(index < _preparedStatementQueries.Length, string.Format("Tried to access invalid prepared statement index %u (max index {0}) on database `{1}`, connection type: {2}",
+            Assert(index < _preparedStatementQueries.Length, string.Format("Tried to access invalid prepared statement index {0} (max index {1}) on database `{2}`, connection type: {3}",
                 index, _preparedStatementQueries.Length, _connectionInfo.Database, _connectionFlags));
 
             var ret = _preparedStatementQueries[index];
