@@ -104,6 +104,21 @@ namespace Common
                 }
             };
 
+            var LogResult = new Action(() =>
+            {
+                var stdout = proc.StandardOutput.ReadToEnd();
+                var stderror = proc.StandardError.ReadToEnd();
+
+                FEL_LOG_INFO(logger, "{0}", stdout);
+                FEL_LOG_ERROR(logger, "{0}", stderror);
+
+                if (!secure)
+                {
+                    FEL_LOG_TRACE(logger, ">> Process \"{0}\" finished with return value {1}.", executable, proc.ExitCode);
+                }
+            });
+
+
             try
             {
                 proc.Start();
@@ -118,13 +133,11 @@ namespace Common
 
                 proc.WaitForExit();
 
-                FEL_LOG_INFO(logger, "{0}", proc.StandardOutput.ReadToEnd());
-                FEL_LOG_ERROR(logger, "{0}", proc.StandardError.ReadToEnd());
-
-                if (!secure)
-                {
-                    FEL_LOG_TRACE(logger, ">> Process \"{0}\" finished with return value {1}.", executable, proc.ExitCode);
-                }
+                LogResult();
+            }
+            catch (IOException)
+            {
+                LogResult();
             }
             catch
             {
