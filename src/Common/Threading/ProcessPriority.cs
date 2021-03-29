@@ -19,27 +19,28 @@ namespace Common
             if (OperatingSystem.IsMacOS()) // macOS is not supported.
                 return;
 
-            Assert(affinity >= 0);
-
             var currentProcess = Process.GetCurrentProcess();
 
-            int appAff = currentProcess.ProcessorAffinity.ToInt32();
-
-            // remove non accessible processors
-            var currentAffinity = affinity & appAff;
-
-            if (currentAffinity == 0)
-                FEL_LOG_ERROR(logChannel, "Processors marked in UseProcessors bitmask (hex) {0:X} are not accessible. Accessible processors bitmask (hex): {0:X}", affinity, appAff);
-            else
+            if (affinity > 0)
             {
-                try
+                int appAff = currentProcess.ProcessorAffinity.ToInt32();
+
+                // remove non accessible processors
+                var currentAffinity = affinity & appAff;
+
+                if (currentAffinity == 0)
+                    FEL_LOG_ERROR(logChannel, "Processors marked in UseProcessors bitmask (hex) {0:X} are not accessible. Accessible processors bitmask (hex): {0:X}", affinity, appAff);
+                else
                 {
-                    currentProcess.ProcessorAffinity = new IntPtr(currentAffinity);
-                    FEL_LOG_INFO(logChannel, "Using processors (bitmask, hex): %x", currentAffinity);
-                }
-                catch
-                {
-                    FEL_LOG_ERROR(logChannel, "Can't set used processors (hex): %x", currentAffinity);
+                    try
+                    {
+                        currentProcess.ProcessorAffinity = new IntPtr(currentAffinity);
+                        FEL_LOG_INFO(logChannel, "Using processors (bitmask, hex): %x", currentAffinity);
+                    }
+                    catch
+                    {
+                        FEL_LOG_ERROR(logChannel, "Can't set used processors (hex): %x", currentAffinity);
+                    }
                 }
             }
 
