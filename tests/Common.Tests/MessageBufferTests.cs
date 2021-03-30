@@ -2,6 +2,7 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Common.Tests
@@ -74,7 +75,7 @@ namespace Common.Tests
             _buffer = new MessageBuffer();
 
             byte[] bytes = new byte[] { (byte)'1', (byte)'a', (byte)4 };
-            _buffer.Write(bytes, bytes.Length);
+            _buffer.Write(bytes.AsSpan());
 
             Assert.AreEqual((byte)'1', _buffer.Data()[0]);
             Assert.AreEqual((byte)'a', _buffer.Data()[1]);
@@ -87,7 +88,7 @@ namespace Common.Tests
             _buffer = new MessageBuffer();
 
             byte[] bytes = new byte[] { (byte)'1', (byte)'a', (byte)4 };
-            _buffer.Write(bytes, 2);
+            _buffer.Write(bytes.AsSpan(0, 2));
 
             Assert.AreEqual((byte)'1', _buffer.Data()[0]);
             Assert.AreEqual((byte)'a', _buffer.Data()[1]);
@@ -101,7 +102,7 @@ namespace Common.Tests
             _buffer.WriteCompleted(2);
 
             byte[] bytes = new byte[] { (byte)'1', (byte)'a', (byte)4 };
-            _buffer.Write(bytes, bytes.Length);
+            _buffer.Write(bytes.AsSpan());
 
             Assert.AreEqual((byte)'1', _buffer.Data()[2]);
             Assert.AreEqual((byte)'a', _buffer.Data()[3]);
@@ -113,7 +114,7 @@ namespace Common.Tests
         {
             _buffer = new MessageBuffer();
             byte[] bytes = new byte[] { (byte)'1', (byte)'a', (byte)4, (byte)'R', (byte)'y', (byte)'a', (byte)'n' };
-            _buffer.Write(bytes, bytes.Length);
+            _buffer.Write(bytes.AsSpan());
 
             _buffer.ReadCompleted(2);
 

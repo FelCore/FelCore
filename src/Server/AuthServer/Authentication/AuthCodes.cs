@@ -3,6 +3,8 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
+using Server.Shared;
+using static Server.Shared.RealmList;
 
 namespace Server.AuthServer
 {
@@ -57,10 +59,30 @@ namespace Server.AuthServer
         LOGIN_LOCKED_ENFORCED = 0x10
     }
 
-    public enum ExpansionFlags
+    public enum ExpansionFlags : byte
     {
         POST_BC_EXP_FLAG = 0x2,
         PRE_BC_EXP_FLAG = 0x1,
         NO_VALID_EXP_FLAG = 0x0
+    }
+
+    public static class AuthHelper
+    {
+        public const uint MAX_PRE_BC_CLIENT_BUILD = 6141;
+
+        public static bool IsPreBCAcceptedClientBuild(uint build)
+        {
+            return build <= MAX_PRE_BC_CLIENT_BUILD && sRealmList.GetBuildInfo(build) != null;
+        }
+
+        public static bool IsPostBCAcceptedClientBuild(uint build)
+        {
+            return build > MAX_PRE_BC_CLIENT_BUILD && sRealmList.GetBuildInfo(build) != null;
+        }
+
+        public static bool IsAcceptedClientBuild(uint build)
+        {
+            return sRealmList.GetBuildInfo(build) != null;
+        }
     }
 }

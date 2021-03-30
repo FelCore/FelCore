@@ -5,7 +5,7 @@
 using System;
 using System.Text;
 using System.Buffers;
-using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Common;
 using static Common.Errors;
 
@@ -65,7 +65,7 @@ namespace Server.Shared
         }
     }
 
-    public class ByteBuffer
+    public unsafe class ByteBuffer
     {
         public const int DEFAULT_SIZE = 0x20;
 
@@ -108,20 +108,24 @@ namespace Server.Shared
             _storage = buffer.Move();
         }
 
-        public ByteBuffer(byte[] src, int startIndex, int length)
+        public ByteBuffer(ReadOnlySpan<byte> data)
         {
             _rpos = 0;
-            _wpos = length;
+            _wpos = data.Length;
 
-            _storage = ArrayPool<byte>.Shared.Rent(length);
+            _storage = ArrayPool<byte>.Shared.Rent(_wpos);
 
-            Buffer.BlockCopy(src, startIndex, _storage, 0, length);
+            data.CopyTo(_storage);
         }
 
         ~ByteBuffer()
         {
             ArrayPool<byte>.Shared.Return(_storage);
         }
+
+        public ReadOnlySpan<byte> ReadSpan => _storage.AsSpan(new Range(_rpos, _wpos));
+
+        public ReadOnlySpan<byte> WriteSpan => _storage.AsSpan(0, _wpos);
 
         public byte[] Move()
         {
@@ -198,324 +202,121 @@ namespace Server.Shared
 
         public void Clear()
         {
-            Array.Clear(_storage, 0, _storage.Length);
+            _storage.AsSpan().Clear(); // Expected it faster than Array.Clear()
             _rpos = _wpos = 0;
         }
 
-        public bool Empty { get { return _storage.Length == 0; } }
-
-        /// <summary>
-        /// A lookup of type sizes. Used instead of Marshal.SizeOf() which has additional
-        /// overhead, but also is compatible with generic functions for simplified code.
-        /// </summary>
-        private static Dictionary<Type, int> GenericSizes = new Dictionary<Type, int>()
+        private void EnsureFreeSpace(int addSize)
         {
-            { typeof(bool),     sizeof(bool) },
-            { typeof(float),    sizeof(float) },
-            { typeof(double),   sizeof(double) },
-            { typeof(sbyte),    sizeof(sbyte) },
-            { typeof(byte),     sizeof(byte) },
-            { typeof(short),    sizeof(short) },
-            { typeof(ushort),   sizeof(ushort) },
-            { typeof(int),      sizeof(int) },
-            { typeof(uint),     sizeof(uint) },
-            { typeof(ulong),    sizeof(ulong) },
-            { typeof(long),     sizeof(long) },
-        };
-
-        /// <summary>
-        /// Get the wire-size (in bytes) of a type supported by flatbuffers.
-        /// </summary>
-        /// <param name="t">The type to get the wire size of</param>
-        /// <returns></returns>
-        public static int SizeOf<T>()
-        {
-            return GenericSizes[typeof(T)];
-        }
-
-        /// <summary>
-        /// Checks if the Type provided is supported as scalar value
-        /// </summary>
-        /// <typeparam name="T">The Type to check</typeparam>
-        /// <returns>True if the type is a scalar type that is supported, falsed otherwise</returns>
-        public static bool IsSupportedType<T>()
-        {
-            return GenericSizes.ContainsKey(typeof(T));
-        }
-
-        /// <summary>
-        /// Append data to buffer.
-        /// </summary>
-        /// <param name="src">The data to append.</param>
-        /// <param name="length">The length of data to append. If it's 0 then append the whole data.</param>
-        public void Append(byte[] src, int length = 0)
-        {
-            Assert(src.Length > 0, string.Format("Attempted to put a zero-sized value in ByteBuffer (pos: {0} size: {1})", _wpos, Size()));
+            Assert(addSize > 0, string.Format("Attempted to put a zero-sized value in ByteBuffer (pos: {0} size: {1})", _wpos, Size()));
             Assert(Size() < 10000000);
 
-            var appendLength = length == 0 ? src.Length : Math.Min(length, src.Length);
-
-            int newSize = _wpos + appendLength;
+            int newSize = _wpos + addSize;
             if (_storage.Length < newSize) // custom memory allocation rules
             {
                 if (newSize < 100)
-                    Resize(300, false);
+                    Resize(256, false);
                 else if (newSize < 750)
-                    Resize(2500, false);
+                    Resize(2048, false);
                 else if (newSize < 6000)
-                    Resize(10000, false);
+                    Resize(8192, false);
                 else
                     Resize(400000, false);
             }
 
             if (_storage.Length < newSize)
                 Resize(newSize, false);
+        }
 
-            Buffer.BlockCopy(src, 0, _storage, _wpos, appendLength);
+        /// <summary>
+        /// Append data to buffer.
+        /// </summary>
+        /// <param name="src">The data to append.</param>
+        public void Append(ReadOnlySpan<byte> src)
+        {
+            EnsureFreeSpace(src.Length);
 
-            _wpos = newSize;
+            src.CopyTo(_storage.AsSpan(_wpos));
+
+            _wpos += src.Length;
         }
 
         public void Append(string value)
         {
+            if (string.IsNullOrEmpty(value)) return;
+
             var byteCount = Encoding.UTF8.GetByteCount(value);
+            EnsureFreeSpace(byteCount);
 
-            var temp = ArrayPool<byte>.Shared.Rent(byteCount);
-            Encoding.UTF8.GetBytes(value, 0, value.Length, temp, 0);
+            Encoding.UTF8.GetBytes(value, _storage.AsSpan(_wpos));
+            // Append '\0'
+            _storage.AsSpan(_wpos + byteCount)[0] = 0;
 
-            Append(temp, byteCount);
-            Append((byte)0);
-
-            ArrayPool<byte>.Shared.Return(temp);
+            _wpos += byteCount + 1;
         }
 
-        public void Append(bool value)
+        public void Append<T>(T value) where T : unmanaged
         {
-            var temp = ArrayPool<byte>.Shared.Rent(1);
-            temp[0] = value ? (byte)1 : (byte)0;
-
-            Append(temp, 1);
-
-            ArrayPool<byte>.Shared.Return(temp);
+            EnsureFreeSpace(sizeof(T));
+            MemoryMarshal.Write<T>(_storage.AsSpan(_wpos, sizeof(T)), ref value);
+            _wpos += sizeof(T);
+        }
+        public void Append(ByteBuffer buffer)
+        {
+            if (buffer.Wpos() > 0)
+                Append(buffer.WriteSpan);
         }
 
-        public void Append(byte value)
+        public void Put(int pos, ReadOnlySpan<byte> src)
         {
-            var temp = ArrayPool<byte>.Shared.Rent(1);
-            temp[0] = value;
-
-            Append(temp, 1);
-
-            ArrayPool<byte>.Shared.Return(temp);
-        }
-
-        public void Append(ushort value)
-        {
-            Append(BitConverter.GetBytes(value));
-        }
-
-        public void Append(uint value)
-        {
-            Append(BitConverter.GetBytes(value));
-        }
-
-        public void Append(ulong value)
-        {
-            Append(BitConverter.GetBytes(value));
-        }
-
-        public void Append(sbyte value)
-        {
-            var temp = ArrayPool<byte>.Shared.Rent(1);
-            temp[0] = (byte)value;
-
-            Append(temp, 1);
-
-            ArrayPool<byte>.Shared.Return(temp);
-        }
-
-        public void Append(short value)
-        {
-            Append(BitConverter.GetBytes(value));
-        }
-
-        public void Append(int value)
-        {
-            Append(BitConverter.GetBytes(value));
-        }
-
-        public void Append(long value)
-        {
-            Append(BitConverter.GetBytes(value));
-        }
-
-        public void Append(float value)
-        {
-            Append(BitConverter.GetBytes(value));
-        }
-
-        public void Append(double value)
-        {
-            Append(BitConverter.GetBytes(value));
-        }
-
-        public void Put(int pos, byte[] src, int startIndex, int length)
-        {
-            Assert(pos + length <= Size(), string.Format("Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", length, pos, Size()));
-
-            Buffer.BlockCopy(src, startIndex, _storage, pos, length);
-        }
-
-        public void Put(int pos, byte[] src, int startIndex = 0)
-        {
+            Assert(pos >= 0, string.Format("Attempted to put value with invalid pos: {0} in ByteBuffer", pos));
             Assert(pos + src.Length <= Size(), string.Format("Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", src.Length, pos, Size()));
 
-            Buffer.BlockCopy(src, startIndex, _storage, pos, src.Length);
+            src.CopyTo(_storage.AsSpan(pos));
         }
 
-        public void Put(int pos, byte value)
+        public void Put<T>(int pos, T value) where T : unmanaged
         {
-            var temp = ArrayPool<byte>.Shared.Rent(1);
-            temp[0] = value;
+            Assert(pos >= 0, string.Format("Attempted to put value with invalid pos: {0} in ByteBuffer", pos));
+            Assert(pos + sizeof(T) <= Size(), string.Format("Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", sizeof(T), pos, Size()));
 
-            Put(pos, temp, 0, 1);
-
-            ArrayPool<byte>.Shared.Return(temp);
+            MemoryMarshal.Write<T>(_storage.AsSpan(pos), ref value);
         }
 
-        public void Put(int pos, bool value)
+        public T Read<T>() where T : unmanaged
         {
-            var temp = ArrayPool<byte>.Shared.Rent(1);
-            temp[0] = value ? (byte)1 : (byte)0;
-
-            Put(pos, temp, 0, 1);
-
-            ArrayPool<byte>.Shared.Return(temp);
+            ref T ret = ref Read<T>(_rpos); 
+            _rpos += sizeof(T);
+            return ret;
         }
 
-        public void Put(int pos, ushort value)
+        public ref T Read<T>(int pos) where T : unmanaged
         {
-            Put(pos, BitConverter.GetBytes(value));
-        }
+            Assert(pos >= 0, string.Format("Attempted to read value with invalid pos: {0} in ByteBuffer", pos));
+            if (pos + sizeof(T) > Size())
+                throw new ByteBufferPositionException(false, pos, sizeof(T), Size());
 
-        public void Put(int pos, uint value)
-        {
-            Put(pos, BitConverter.GetBytes(value));
-        }
+            ref var ret = ref MemoryMarshal.AsRef<T>(_storage.AsSpan(pos));
 
-        public void Put(int pos, ulong value)
-        {
-            Put(pos, BitConverter.GetBytes(value));
-        }
-
-        public void Put(int pos, sbyte value)
-        {
-            var temp = ArrayPool<byte>.Shared.Rent(1);
-            temp[0] = (byte)value;
-
-            Put(pos, temp, 0, 1);
-
-            ArrayPool<byte>.Shared.Return(temp);
-        }
-
-        public void Put(int pos, short value)
-        {
-            Put(pos, BitConverter.GetBytes(value));
-        }
-
-        public void Put(int pos, int value)
-        {
-            Put(pos, BitConverter.GetBytes(value));
-        }
-
-        public void Put(int pos, long value)
-        {
-            Put(pos, BitConverter.GetBytes(value));
-        }
-
-        public void Put(int pos, float value)
-        {
-            Put(pos, BitConverter.GetBytes(value));
-        }
-
-        public void Put(int pos, double value)
-        {
-            Put(pos, BitConverter.GetBytes(value));
-        }
-
-        public bool ReadBool()
-        {
-            return _storage[_rpos++] > 0 ? true : false;
-        }
-
-        public byte ReadByte()
-        {
-            return _storage[_rpos++];
-        }
-
-        public ushort ReadUShort()
-        {
-            _rpos += 2;
-            return BitConverter.ToUInt16(_storage, _rpos - 2);
-        }
-
-        public uint ReadUInt()
-        {
-            _rpos += 4;
-            return BitConverter.ToUInt32(_storage, _rpos - 4);
-        }
-
-        public ulong ReadULong()
-        {
-            _rpos += 8;
-            return BitConverter.ToUInt64(_storage, _rpos - 8);
-        }
-
-        public sbyte ReadSByte()
-        {
-            return (sbyte)_storage[_rpos++];
-        }
-
-        public short ReadShort()
-        {
-            _rpos += 2;
-            return BitConverter.ToInt16(_storage, _rpos - 2);
-        }
-
-        public int ReadInt()
-        {
-            _rpos += 4;
-            return BitConverter.ToInt32(_storage, _rpos - 4);
-        }
-
-        public long ReadLong()
-        {
-            _rpos += 8;
-            return BitConverter.ToInt64(_storage, _rpos - 8);
+            return ref ret;
         }
 
         public float ReadFloat()
         {
-            _rpos += 4;
-
-            var value = BitConverter.ToSingle(_storage, _rpos - 4);
-
-            if (float.IsInfinity(value))
+            var val = Read<float>();
+            if (float.IsInfinity(val))
                 throw new ByteBufferInvalidValueException("float", "infinity");
 
-            return value;
+            return val;
         }
 
         public double ReadDouble()
         {
-            _rpos += 8;
-
-            var value = BitConverter.ToDouble(_storage, _rpos - 8);
-
-            if (double.IsInfinity(value))
+            var val = Read<double>();
+            if (double.IsInfinity(val))
                 throw new ByteBufferInvalidValueException("double", "infinity");
 
-            return value;
+            return val;
         }
 
         public string ReadString()
@@ -525,7 +326,7 @@ namespace Server.Shared
 
             while (_rpos < Size())
             {
-                var c = ReadByte();
+                var c = Read<byte>();
 
                 if (c == 0)
                     break;
@@ -553,14 +354,14 @@ namespace Server.Shared
             return bytes;
         }
 
-        public void ReadBytes(byte[] dest, int len, int destIndex = 0)
+        public void ReadBytes(Span<byte> dest)
         {
-            if (_rpos + len > Size())
-                throw new ByteBufferPositionException(false, _rpos, len, Size());
+            if (_rpos + dest.Length > Size())
+                throw new ByteBufferPositionException(false, _rpos, dest.Length, Size());
 
-            Buffer.BlockCopy(_storage, _rpos, dest, destIndex, len);
+            _storage.AsSpan(_rpos, dest.Length).CopyTo(dest);
 
-            _rpos += len;
+            _rpos += dest.Length;
         }
 
         public void ReadSkip(int skip)
@@ -571,12 +372,12 @@ namespace Server.Shared
             _rpos += skip;
         }
 
-        public void ReadSkip<T>() where T : unmanaged { ReadSkip(SizeOf<T>()); }
+        public void ReadSkip<T>() where T : unmanaged { ReadSkip(sizeof(T)); }
         public void ReadSkipString()
         {
             while (_rpos < Size())
             {
-                var c = ReadByte();
+                var c = Read<byte>();
 
                 if (c == 0)
                     break;
@@ -633,7 +434,7 @@ namespace Server.Shared
                     ++j;
                 }
 
-                sb.Append("0x").Append(ReadByte().ToString("X2")).Append(" ");
+                sb.Append("0x").Append(Read<byte>().ToString("X2")).Append(" ");
             }
 
             sb.Append(" ");

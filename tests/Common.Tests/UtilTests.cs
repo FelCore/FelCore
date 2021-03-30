@@ -2,6 +2,7 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
+using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Common.Util;
 
@@ -46,6 +47,70 @@ namespace Common.Tests
         public void ShouldDigestSHA1ForStr()
         {
             Assert.AreEqual("356A192B7913B04C54574D18C28D46E6395428AB", ByteArrayToHexStr(DigestSHA1("1")));
+        }
+
+        [TestMethod]
+        public void ShouldIPv4InNetwork()
+        {
+            IPAddress network = IPAddress.Parse("172.20.76.0");
+            IPAddress subnetMask = IPAddress.Parse("255.255.254.0");
+
+            IPAddress address = IPAddress.Parse("172.20.76.5");
+            Assert.IsTrue(IPv4InNetwork(address, subnetMask, network));
+
+            address = IPAddress.Parse("172.20.77.5");
+            Assert.IsTrue(IPv4InNetwork(address, subnetMask, network));
+
+            address = IPAddress.Parse("172.20.78.5");
+            Assert.IsFalse(IPv4InNetwork(address, subnetMask, network));
+        }
+
+        [TestMethod]
+        public void ShouldIPv4InNetworkWithNetworkAddresIsIPAddress()
+        {
+            IPAddress network = IPAddress.Parse("172.20.76.1");
+            IPAddress subnetMask = IPAddress.Parse("255.255.254.0");
+
+            IPAddress address = IPAddress.Parse("172.20.76.5");
+            Assert.IsTrue(IPv4InNetwork(address, subnetMask, network));
+        }
+
+        [TestMethod]
+        public void ShouldResolveIPAddressForDomain()
+        {
+            var address = Util.ResolveIPAddress("bing.com");
+            Assert.IsTrue(address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+        }
+
+        [TestMethod]
+        public void ShouldNotResolveIPAddressForInvalidDomain()
+        {
+            var address = Util.ResolveIPAddress("abcabc");
+            Assert.IsNull(address);
+        }
+
+        [TestMethod]
+        public void ShouldResolveIPAddressForIP()
+        {
+            var address = Util.ResolveIPAddress("127.0.0.1");
+            Assert.IsTrue(address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+
+            address = Util.ResolveIPAddress("8.8.8.8");
+            Assert.IsTrue(address.ToString().StartsWith("8.8."));
+        }
+
+        [TestMethod]
+        public void ShouldNotResolveIPAddressForInvalidIP()
+        {
+            var address = Util.ResolveIPAddress("192.168.1111.1");
+            Assert.IsNull(address);
+        }
+
+        [TestMethod]
+        public void ShouldResolveSubnetMaskAddress()
+        {
+            var address = Util.ResolveIPAddress("255.255.255.0");
+            Assert.IsNotNull(address);
         }
     }
 }
