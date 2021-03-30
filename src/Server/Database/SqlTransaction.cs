@@ -5,7 +5,6 @@
 using System.Collections.Generic;
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using MySqlConnector;
 using Common;
 using static Common.Log;
@@ -167,14 +166,14 @@ namespace Server.Database
             return false;
         }
 
-        public Task<bool> GetFuture() { return _result.Task; }
+        public Future<bool> GetFuture() { return _result.GetFuture(); }
 
-        TaskCompletionSource<bool> _result = new TaskCompletionSource<bool>();
+        Promise<bool> _result = new();
     }
 
     public class SqlTransactionCallback : ISqlCallback
     {
-        public SqlTransactionCallback(Task<bool> future)
+        public SqlTransactionCallback(Future<bool> future)
         {
             _future = future;
         }
@@ -186,7 +185,7 @@ namespace Server.Database
 
         public bool InvokeIfReady()
         {
-            if (TaskValid(_future) && _future.Wait(0))
+            if (_future.Valid && _future.Wait(0))
             {
                 if (_callback != null)
                     _callback(_future.Result);
@@ -197,7 +196,7 @@ namespace Server.Database
             return false;
         }
 
-        Task<bool> _future;
+        Future<bool> _future;
         Action<bool>? _callback;
     }
 }

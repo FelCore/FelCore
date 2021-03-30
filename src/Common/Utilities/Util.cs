@@ -7,7 +7,6 @@ using System.IO;
 using System.Text;
 using System.Diagnostics;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 using static Common.Log;
 using static Common.Errors;
 
@@ -75,11 +74,6 @@ namespace Common
             {
                 return sha1.ComputeHash(bytes);
             }
-        }
-
-        public static bool TaskValid(Task? task)
-        {
-            return task != null && task.Status > TaskStatus.Created;
         }
 
         public static int StartProcess(string executable, string args, string logger, string inputFile, bool secure)

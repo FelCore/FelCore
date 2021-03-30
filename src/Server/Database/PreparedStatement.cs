@@ -4,7 +4,7 @@
 
 using System;
 using System.Text;
-using System.Threading.Tasks;
+using Common;
 using static Common.Errors;
 
 namespace Server.Database
@@ -80,14 +80,15 @@ namespace Server.Database
     public class PreparedStatementTask : SqlOperation
     {
         PreparedStatementBase _stmt;
-        TaskCompletionSource<PreparedQueryResult?>? _result;
+        bool _hasResult;
+        Promise<PreparedQueryResult?> _result;
 
         public PreparedStatementTask(PreparedStatementBase stmt, bool hasResult = false)
         {
             _stmt = stmt;
+            _hasResult = hasResult;
 
-            if (hasResult)
-                _result = new TaskCompletionSource<PreparedQueryResult?>();
+            _result = new Promise<PreparedQueryResult?>();
         }
 
         public override bool Execute()
@@ -95,7 +96,7 @@ namespace Server.Database
             if (Conn == null)
                 return false;
 
-            if (_result != null)
+            if (_hasResult)
             {
                 var result = Conn.Query(_stmt);
 
@@ -106,14 +107,10 @@ namespace Server.Database
             return Conn.Execute(_stmt);
         }
 
-        public Task<PreparedQueryResult?> GetFuture()
+        public Future<PreparedQueryResult?> GetFuture()
         {
-            if (_result == null)
-            {
-                Assert(false);
-                throw new Exception();
-            }
-            return _result.Task;
+            Assert(_hasResult, "PreparedStatementTask has no result!");
+            return _result.GetFuture();
         }
     }
 }

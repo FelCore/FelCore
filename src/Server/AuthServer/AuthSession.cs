@@ -98,6 +98,7 @@ namespace Server.AuthServer
             while (packet.GetActiveSize() != 0)
             {
                 var cmd = packet.GetByte(0);
+                packet.ReadCompleted(packet.Wpos());
                 //TODO:
             }
         }

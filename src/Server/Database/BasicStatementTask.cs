@@ -3,7 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
-using System.Threading.Tasks;
+using Common;
 using static Common.Errors;
 
 namespace Server.Database
@@ -13,22 +13,20 @@ namespace Server.Database
         public BasicStatementTask(string sql, bool hasResult = false)
         {
             _sql = sql;
+            _hasResult = hasResult;
 
-            if (hasResult)
-                _result = new TaskCompletionSource<QueryResult?>();
+            _result = new Promise<QueryResult?>();
         }
 
         string _sql; //- Raw query to be executed
-        TaskCompletionSource<QueryResult?>? _result;
+        bool _hasResult;
 
-        public Task<QueryResult?> GetFuture()
+        Promise<QueryResult?> _result;
+
+        public Future<QueryResult?> GetFuture()
         {
-            if (_result == null)
-            {
-                Assert(false);
-                throw new Exception();
-            }
-            return _result.Task;
+            Assert(_hasResult, "BasicStatementTask has no result!");
+            return _result.GetFuture();
         }
 
         public override bool Execute()
@@ -36,7 +34,7 @@ namespace Server.Database
             if (Conn == null)
                 return false;
 
-            if (_result != null)
+            if (_hasResult)
             {
                 var result = Conn.Query(_sql);
                 if (result == null || !result.NextRow())

@@ -3,11 +3,9 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Common;
 using static Common.Log;
 using static Common.Errors;
-using static Common.Util;
 
 namespace Server.Database
 {
@@ -60,12 +58,12 @@ namespace Server.Database
     public class SqlQueryHolderTask : SqlOperation
     {
         SqlQueryHolderBase _holder;
-        TaskCompletionSource<SqlQueryHolderBase> _result;
+        Promise<SqlQueryHolderBase> _result;
 
         public SqlQueryHolderTask(SqlQueryHolderBase holder)
         {
             _holder = holder;
-            _result = new TaskCompletionSource<SqlQueryHolderBase>();
+            _result = new Promise<SqlQueryHolderBase>();
         }
 
         public override bool Execute()
@@ -85,16 +83,16 @@ namespace Server.Database
             return true;
         }
 
-        public Task<SqlQueryHolderBase> GetFuture() { return _result.Task; }
+        public Future<SqlQueryHolderBase> GetFuture() { return _result.GetFuture(); }
     }
 
     public class SqlQueryHolderCallback : ISqlCallback
     {
         SqlQueryHolderBase _holder;
-        Task<SqlQueryHolderBase> _future;
+        Future<SqlQueryHolderBase> _future;
         Action<SqlQueryHolderBase>? _callback;
 
-        public SqlQueryHolderCallback(SqlQueryHolderBase holder, Task<SqlQueryHolderBase> future)
+        public SqlQueryHolderCallback(SqlQueryHolderBase holder, Future<SqlQueryHolderBase> future)
         {
             _holder = holder;
             _future = future;
@@ -107,7 +105,7 @@ namespace Server.Database
 
         public bool InvokeIfReady()
         {
-            if (TaskValid(_future) && _future.Wait(0))
+            if (_future.Valid && _future.Wait(0))
             {
                 if (_callback != null)
                     _callback(_holder);

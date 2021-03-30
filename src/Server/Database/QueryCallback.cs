@@ -4,10 +4,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using static Common.Log;
+using Common;
 using static Common.Errors;
-using static Common.Util;
 
 namespace Server.Database
 {
@@ -15,13 +13,13 @@ namespace Server.Database
     {
         private bool _isPrepared;
 
-        public QueryCallback(Task<QueryResult?> result)
+        public QueryCallback(Future<QueryResult?> result)
         {
             _isPrepared = false;
             _rawString = result;
         }
 
-        public QueryCallback(Task<PreparedQueryResult?> result)
+        public QueryCallback(Future<PreparedQueryResult?> result)
         {
             _isPrepared = true;
             _prepared = result;
@@ -80,7 +78,7 @@ namespace Server.Database
             {
                 _callbacks.Dequeue();
 
-                bool hasNext = !_isPrepared ? TaskValid(_rawString) : TaskValid(_prepared);
+                bool hasNext = !_isPrepared ? _rawString != null && _rawString.Valid : _prepared != null && _prepared.Valid;
                 if (_callbacks.Count == 0)
                 {
                     Assert(!hasNext);
@@ -95,44 +93,48 @@ namespace Server.Database
                 return false;
             });
 
-#pragma warning disable CS8600,CS8602
             if (!_isPrepared)
             {
-                if (TaskValid(_rawString) && _rawString.Wait(0))
+                if (_rawString != null)
                 {
-                    Task<QueryResult?> f = _rawString;
-                    _rawString = null;
+                    if (_rawString.Valid && _rawString.Wait(0))
+                    {
+                        Future<QueryResult?> f = _rawString;
+                        _rawString = null;
 
-                    Action<QueryCallback, QueryResult?> cb = callback.RawString;
-                    callback.RawString = null;
+                        Action<QueryCallback, QueryResult?> cb = callback.RawString!;
+                        callback.RawString = null;
 
-                    cb(this, f.Result);
+                        cb(this, f.Result);
 
-                    return checkStateAndReturnCompletion();
+                        return checkStateAndReturnCompletion();
+                    }
                 }
             }
             else
             {
-                if (TaskValid(_prepared) && _prepared.Wait(0))
+                if (_prepared != null)
                 {
-                    Task<PreparedQueryResult?> f = _prepared;
-                    _prepared = null;
+                    if (_prepared.Valid && _prepared.Wait(0))
+                    {
+                        Future<PreparedQueryResult?> f = _prepared;
+                        _prepared = null;
 
-                    Action<QueryCallback, PreparedQueryResult?> cb = callback.Prepared;
-                    callback.Prepared = null;
+                        Action<QueryCallback, PreparedQueryResult?> cb = callback.Prepared!;
+                        callback.Prepared = null;
 
-                    cb(this, f.Result);
+                        cb(this, f.Result);
 
-                    return checkStateAndReturnCompletion();
+                        return checkStateAndReturnCompletion();
+                    }
                 }
             }
-#pragma warning restore CS8602
 
             return false;
         }
 
-        Task<QueryResult?>? _rawString;
-        Task<PreparedQueryResult?>? _prepared;
+        Future<QueryResult?>? _rawString;
+        Future<PreparedQueryResult?>? _prepared;
         Queue<QueryCallbackData> _callbacks = new Queue<QueryCallbackData>();
     }
 
