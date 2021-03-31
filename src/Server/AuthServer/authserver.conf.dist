@@ -310,22 +310,23 @@ Updates.CleanDeadRefMaxCount = 3
 #
 #                     Colors (read as optional1 if Type = Console)
 #                         Format: "fatal error warn info debug trace"
-#                         0 - BLACK
-#                         1 - RED
-#                         2 - GREEN
-#                         3 - BROWN
-#                         4 - BLUE
-#                         5 - MAGENTA
-#                         6 - CYAN
-#                         7 - GREY
-#                         8 - YELLOW
-#                         9 - LRED
-#                        10 - LGREEN
-#                        11 - LBLUE
-#                        12 - LMAGENTA
-#                        13 - LCYAN
-#                        14 - WHITE
-#                         Example: "13 11 9 5 3 1"
+#                         0 - Black
+#                         1 - DarkBlue
+#                         2 - DarkGreen
+#                         3 - DarkCyan
+#                         4 - DarkRed
+#                         5 - DarkMagenta
+#                         6 - DarkYellow
+#                         7 - Gray
+#                         8 - DarkGray
+#                         9 - Blue
+#                        10 - Green
+#                        11 - Cyan
+#                        12 - Red
+#                        13 - Magenta
+#                        14 - Yellow
+#                        15 - White
+#                        Example: "4 12 14 15 1 8"
 #
 #                     File: Name of the file (read as optional1 if Type = File)
 #                         Allows to use one "%s" to create dynamic files
