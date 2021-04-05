@@ -57,6 +57,7 @@ namespace Common
         }
 
         public ReadOnlySpan<byte> ReadSpan => _storage.AsSpan(new Range(_rpos, _wpos));
+        public Span<byte> WriteSpan => _storage.AsSpan(_wpos);
 
         public void Reset()
         {

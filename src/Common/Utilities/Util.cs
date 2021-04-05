@@ -16,7 +16,7 @@ namespace Common
     {
         public const int MaxStackLimit = 1024;
 
-        public static string ByteArrayToHexStr(byte[] bytes, bool reverse = false)
+        public static string ByteArrayToHexStr(ReadOnlySpan<byte> bytes, bool reverse = false)
         {
             int arrayLen = bytes.Length;
             int init = 0;
@@ -40,9 +40,15 @@ namespace Common
 
         public static byte[] HexStrToByteArray(string str, bool reverse = false)
         {
-            Assert(str.Length % 2 == 0);
-
             var ret = new byte[str.Length / 2];
+            HexStrToByteArray(str, ret, reverse);
+
+            return ret;
+        }
+
+        public static void HexStrToByteArray(string str, Span<byte> result, bool reverse = false)
+        {
+            Assert(str.Length % 2 == 0);
 
             int init = 0;
             int end = str.Length;
@@ -59,37 +65,35 @@ namespace Common
             for (int i = init; i != end; i += 2 * op)
             {
                 var buffer = str.Substring(i, 2);
-                ret[j++] = Convert.ToByte(buffer, 16);
+                result[j++] = Convert.ToByte(buffer, 16);
             }
-
-            return ret;
         }
 
         public static byte[] DigestSHA1(string str)
         {
-            return DigestSHA1(Encoding.UTF8.GetBytes(str));
+            var hash = new byte[SHA1Hash.SHA1_DIGEST_LENGTH];
+            DigestSHA1(str, hash, out _);
+            return hash;
         }
 
-        public static byte[] DigestSHA1(byte[] bytes)
+        public static void DigestSHA1(string str, Span<byte> hash, out int byteCount)
         {
             using (var sha1 = new SHA1Hash())
-            {
-                sha1.UpdateData(bytes, bytes.Length);
-                sha1.Finish();
-                return sha1.Digest!;
-            }
+                sha1.ComputeHash(str, hash, out byteCount);
         }
 
-        public static byte[] DigestSHA1(params byte[][] pack)
+        public static byte[] DigestSHA1(ReadOnlySpan<byte> data)
+        {
+            var hash = new byte[SHA1Hash.SHA1_DIGEST_LENGTH];
+            DigestSHA1(data, hash, out _);
+
+            return hash;
+        }
+
+        public static void DigestSHA1(ReadOnlySpan<byte> data, Span<byte> hash, out int byteCount)
         {
             using (var sha1 = new SHA1Hash())
-            {
-                foreach(var data in pack)
-                    sha1.UpdateData(data);
-
-                sha1.Finish();
-                return sha1.Digest!;
-            }
+                sha1.ComputeHash(data, hash, out byteCount);
         }
 
         public static int StartProcess(string executable, string args, string logger, string inputFile, bool secure)

@@ -12,9 +12,10 @@ namespace Common
 {
     public unsafe sealed class SHA1Hash : IDisposable
     {
-        private SHA1 _sha1;
-
         public const int SHA1_DIGEST_LENGTH = 20;
+
+        private SHA1 _sha1;
+        private MessageBuffer? _dataBuffer;
 
         private bool _disposed;
 
@@ -23,20 +24,50 @@ namespace Common
             _sha1 = SHA1.Create();
         }
 
-        public void UpdateBigNumbers(params BigInteger[] bigIntegers)
+        ~SHA1Hash()
         {
+            Dispose(false);
+        }
+
+        private void EnsureAndResetDataBuffer()
+        {
+            if (_dataBuffer == null)
+                _dataBuffer = new();
+
+            _dataBuffer.Reset();
+        }
+
+        public void UpdateData(params BigInteger[] bigIntegers)
+        {
+            EnsureAndResetDataBuffer();
+
+            int totalBytesCount = 0;
             foreach(var bn in bigIntegers)
-                UpdateData(bn.ToByteArray(true));
+                totalBytesCount += bn.GetByteCount(true);
+
+            if (_dataBuffer!.GetBufferSize() < totalBytesCount)
+                _dataBuffer.Resize(totalBytesCount);
+
+            int bytesWritten = 0;
+            foreach(var bn in bigIntegers)
+            {
+                bn.TryWriteBytes(_dataBuffer.WriteSpan, out bytesWritten, true);
+                _dataBuffer.WriteCompleted(bytesWritten);
+            }
+
+            _sha1.TransformBlock(_dataBuffer.Data(), 0, _dataBuffer.Wpos(), null, 0);
         }
 
-        public void UpdateData(byte[] data)
+        public void UpdateData(ReadOnlySpan<byte> data)
         {
-            UpdateData(data, data.Length);
-        }
+            EnsureAndResetDataBuffer();
 
-        public void UpdateData(byte[] data, int length, int startIndex = 0)
-        {
-            _sha1.TransformBlock(data, 0, length, null, 0);
+            if (_dataBuffer!.GetBufferSize() < data.Length)
+                _dataBuffer.Resize(data.Length);
+
+            _dataBuffer.Write(data);
+
+            _sha1.TransformBlock(_dataBuffer.Data(), 0, _dataBuffer.Wpos(), null, 0);
         }
 
         public void UpdateData(string str)
@@ -44,13 +75,17 @@ namespace Common
             if (string.IsNullOrEmpty(str))
                 return;
 
-            var bufferSize = Encoding.UTF8.GetByteCount(str);
-            var buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+            EnsureAndResetDataBuffer();
 
-            Encoding.UTF8.GetBytes(str, 0, str.Length, buffer, 0);
-            UpdateData(buffer, bufferSize);
+            var bytesCount = Encoding.UTF8.GetByteCount(str);
 
-            ArrayPool<byte>.Shared.Return(buffer);
+            if (_dataBuffer!.GetBufferSize() < bytesCount)
+                _dataBuffer.Resize(bytesCount);
+
+            Encoding.UTF8.GetBytes(str, _dataBuffer.WriteSpan);
+            _dataBuffer.WriteCompleted(bytesCount);
+
+            _sha1.TransformBlock(_dataBuffer.Data(), 0, _dataBuffer.Wpos(), null, 0);
         }
 
         public void Initialize()
@@ -102,6 +137,7 @@ namespace Common
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         void Dispose(bool disposing)
@@ -109,7 +145,14 @@ namespace Common
             if (!_disposed)
             {
                 if (disposing)
+                {
                     _sha1.Dispose();
+                    if (_dataBuffer != null)
+                    {
+                        _dataBuffer.Dispose();
+                        _dataBuffer = null;
+                    }
+                }
             }
             _disposed = true;
         }

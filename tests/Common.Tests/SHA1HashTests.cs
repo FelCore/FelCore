@@ -2,6 +2,7 @@
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE', which is part of this source code package.
 
+using System.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Common.Util;
 
@@ -47,6 +48,44 @@ namespace Common.Tests
                 sha1.Finish();
                 Assert.AreEqual("77DE68DAECD823BABBB58EDB1C8E14D7106E83BB", ByteArrayToHexStr(sha1.Digest));
                 Assert.AreEqual(20, sha1.Length);
+            }
+        }
+
+        [TestMethod]
+        public void ShouldHashReadOnlySpan()
+        {
+            using (var sha1 = new SHA1Hash())
+            {
+                var data = new byte[1] { 49 };
+                sha1.UpdateData(data);
+                sha1.Finish();
+                Assert.AreEqual("356A192B7913B04C54574D18C28D46E6395428AB", ByteArrayToHexStr(sha1.Digest));
+
+                sha1.Initialize();
+                data = new byte[2] { 49, 50 };
+                sha1.UpdateData(data);
+                sha1.Finish();
+                Assert.AreEqual("7B52009B64FD0A2A49E6D8A939753077792B0554", ByteArrayToHexStr(sha1.Digest));
+            }
+        }
+
+        [TestMethod]
+        public void ShouldHashBigIntegers()
+        {
+            using (var sha1 = new SHA1Hash())
+            {
+                var data = new byte[1] { 49 };
+                BigInteger bn1 = new(data, true);
+                sha1.UpdateData(bn1);
+                sha1.Finish();
+                Assert.AreEqual("356A192B7913B04C54574D18C28D46E6395428AB", ByteArrayToHexStr(sha1.Digest));
+
+                data = new byte[2] { 49, 50 };
+                bn1 = new(data, true);
+                sha1.Initialize();
+                sha1.UpdateData(bn1);
+                sha1.Finish();
+                Assert.AreEqual("7B52009B64FD0A2A49E6D8A939753077792B0554", ByteArrayToHexStr(sha1.Digest));
             }
         }
     }
