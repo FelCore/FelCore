@@ -140,13 +140,6 @@ namespace Server.Database
 
                 FEL_LOG_INFO("sql.sql", "Connected to MySQL database at {0}", _connectionInfo.Host);
 
-                //TODO:
-                //mysql_autocommit(m_Mysql, 1);
-
-                //// set connection properties to UTF8 to properly handle locales for different
-                //// server configs - core sends data in UTF8, so MySQL must expect UTF8 too
-                //mysql_set_character_set(m_Mysql, "utf8");
-
                 return MySqlErrorCode.None;
             }
             catch (MySqlException ex)
