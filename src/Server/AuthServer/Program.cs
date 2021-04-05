@@ -15,12 +15,33 @@ using static Common.ProcessPriority;
 using Server.Database;
 using static Server.Database.LoginStatements;
 using static Server.AuthServer.AuthSocketMgr;
+using static Server.Shared.RealmList;
 
 namespace Server.AuthServer
 {
     class Program
     {
         static bool Stop;
+
+        static void CreateAccount(string username, string password, string email)
+        {
+            username = username.ToUpperInvariant();
+            password = password.ToUpperInvariant();
+
+            var stmt = DB.LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT);
+
+            stmt.Parameters[0] = username;
+            var data = SRP6.MakeRegistrationData(username, password);
+            stmt.Parameters[1] = data.Item1; // salt
+            stmt.Parameters[2] = data.Item2; // verifier
+            stmt.Parameters[3] = email;
+            stmt.Parameters[4] = email;
+
+            DB.LoginDatabase.DirectExecute(stmt);
+
+            stmt = DB.LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS_INIT);
+            DB.LoginDatabase.Execute(stmt);
+        }
 
         static int Main(string[] args)
         {
@@ -85,6 +106,15 @@ namespace Server.AuthServer
             if (!StartDB())
                 return 1;
 
+            // Get the list of realms for the server
+            sRealmList.Initialize(sConfigMgr.GetIntDefault("RealmsStateUpdateDelay", 20));
+
+            if (sRealmList.GetRealms().Count == 0)
+            {
+                FEL_LOG_ERROR("server.authserver", "No valid realms specified.");
+                return 1;
+            }
+
             // Start the listening port (acceptor) for auth connections
             var port = sConfigMgr.GetIntDefault("RealmServerPort", 3724);
             if (port < 0 || port > 0xFFFF)
@@ -110,22 +140,31 @@ namespace Server.AuthServer
             };
 
             var dbPingInterval = sConfigMgr.GetIntDefault("MaxPingTime", 30) * 1000;
-            var mysqlKeepAliveTimer = new Timer((s) => {
+            Timer? mysqlKeepAliveTimer = null;
+            mysqlKeepAliveTimer = new Timer((s) =>
+            {
                 FEL_LOG_INFO("server.authserver", "Ping MySQL to keep connection alive");
                 DB.LoginDatabase.KeepAlive();
-            }, null, dbPingInterval, dbPingInterval);
+
+                mysqlKeepAliveTimer!.Change(dbPingInterval, Timeout.Infinite);
+            }, null, dbPingInterval, Timeout.Infinite);
 
             var banExpiryCheckInterval = sConfigMgr.GetIntDefault("BanExpiryCheckInterval", 60) * 1000;
-            var banExpiryCheckTimer = new Timer((s) => {
+            Timer? banExpiryCheckTimer = null;
+            banExpiryCheckTimer = new Timer((s) =>
+            {
                 DB.LoginDatabase.Execute(DB.LoginDatabase.GetPreparedStatement(LOGIN_DEL_EXPIRED_IP_BANS));
                 DB.LoginDatabase.Execute(DB.LoginDatabase.GetPreparedStatement(LOGIN_UPD_EXPIRED_ACCOUNT_BANS));
-            }, null, banExpiryCheckInterval, banExpiryCheckInterval);
+
+                banExpiryCheckTimer!.Change(banExpiryCheckInterval, Timeout.Infinite);
+            }, null, banExpiryCheckInterval, Timeout.Infinite);
 
             while (!Stop)
             {
                 Thread.Sleep(100);
             }
 
+            sRealmList.Close();
             mysqlKeepAliveTimer.Dispose();
             banExpiryCheckTimer.Dispose();
 

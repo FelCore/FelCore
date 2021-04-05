@@ -7,7 +7,7 @@ using System.Buffers;
 
 namespace Common
 {
-    public class MessageBuffer
+    public unsafe class MessageBuffer
     {
         public const int DefaultSize = 0x20;
 
@@ -64,10 +64,7 @@ namespace Common
             return _storage;
         }
 
-        public byte GetByte(int pos)
-        {
-            return _storage[_rpos + pos];
-        }
+        public ReadOnlySpan<byte> ReadSpan => _storage.AsSpan(new Range(_rpos, _wpos));
 
         public void Reset()
         {
@@ -113,7 +110,7 @@ namespace Common
             if (_rpos > 0 && _wpos >= _rpos)
             {
                 if (_rpos != _wpos)
-                    Array.ConstrainedCopy(_storage, _rpos, _storage, 0, GetActiveSize());
+                    Buffer.BlockCopy(_storage, _rpos, _storage, 0, GetActiveSize());
 
                 _wpos -= _rpos;
                 _rpos = 0;
@@ -128,13 +125,10 @@ namespace Common
                 Resize(_storage.Length * 3 / 2);
         }
 
-        public void Write(byte[] data, int size, int startIndex = 0)
+        public void Write(ReadOnlySpan<byte> data)
         {
-            if (size > 0)
-            {
-                Buffer.BlockCopy(data, startIndex, _storage, _wpos, size);
-                WriteCompleted(size);
-            }
+            data.CopyTo(_storage.AsSpan(_wpos));
+            WriteCompleted(data.Length);
         }
     }
 }

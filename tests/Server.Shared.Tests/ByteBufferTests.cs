@@ -341,8 +341,8 @@ namespace Server.Shared.Tests
             _buffer.Append(true);
             _buffer.Append(false);
 
-            Assert.IsTrue(_buffer.ReadBool());
-            Assert.IsFalse(_buffer.ReadBool());
+            Assert.IsTrue(_buffer.Read<bool>());
+            Assert.IsFalse(_buffer.Read<bool>());
         }
 
         [TestMethod]
@@ -352,8 +352,8 @@ namespace Server.Shared.Tests
             _buffer.Append((byte)111);
             _buffer.Append((byte)64);
 
-            Assert.AreEqual((byte)111, _buffer.ReadByte());
-            Assert.AreEqual((byte)64, _buffer.ReadByte());
+            Assert.AreEqual((byte)111, _buffer.Read<byte>());
+            Assert.AreEqual((byte)64, _buffer.Read<byte>());
         }
 
         [TestMethod]
@@ -363,8 +363,8 @@ namespace Server.Shared.Tests
             _buffer.Append((sbyte)111);
             _buffer.Append((sbyte)-64);
 
-            Assert.AreEqual((sbyte)111, _buffer.ReadSByte());
-            Assert.AreEqual((sbyte)-64, _buffer.ReadSByte());
+            Assert.AreEqual((sbyte)111, _buffer.Read<sbyte>());
+            Assert.AreEqual((sbyte)-64, _buffer.Read<sbyte>());
         }
 
         [TestMethod]
@@ -374,8 +374,8 @@ namespace Server.Shared.Tests
             _buffer.Append((short)'文');
             _buffer.Append((short)'A');
 
-            Assert.AreEqual((short)'文', _buffer.ReadShort());
-            Assert.AreEqual((short)'A', _buffer.ReadShort());
+            Assert.AreEqual((short)'文', _buffer.Read<short>());
+            Assert.AreEqual((short)'A', _buffer.Read<short>());
         }
 
         [TestMethod]
@@ -385,8 +385,8 @@ namespace Server.Shared.Tests
             _buffer.Append((uint)'文');
             _buffer.Append((uint)'A');
 
-            Assert.AreEqual((uint)'文', _buffer.ReadUInt());
-            Assert.AreEqual((uint)'A', _buffer.ReadUInt());
+            Assert.AreEqual((uint)'文', _buffer.Read<uint>());
+            Assert.AreEqual((uint)'A', _buffer.Read<uint>());
         }
 
         [TestMethod]
@@ -396,8 +396,8 @@ namespace Server.Shared.Tests
             _buffer.Append(-9223372036854775808);
             _buffer.Append(9223372036854775807);
 
-            Assert.AreEqual(-9223372036854775808, _buffer.ReadLong());
-            Assert.AreEqual(9223372036854775807, _buffer.ReadLong());
+            Assert.AreEqual(-9223372036854775808, _buffer.Read<long>());
+            Assert.AreEqual(9223372036854775807, _buffer.Read<long>());
         }
 
         [TestMethod]
@@ -431,7 +431,7 @@ namespace Server.Shared.Tests
             _buffer.Append(9223372036854775807);
 
             Assert.AreEqual(str, _buffer.ReadString());
-            Assert.AreEqual(9223372036854775807, _buffer.ReadLong());
+            Assert.AreEqual(9223372036854775807, _buffer.Read<long>());
         }
 
         [TestMethod]
@@ -444,8 +444,8 @@ namespace Server.Shared.Tests
 
             _buffer.ReadSkip(1);
 
-            Assert.AreEqual((short)2, _buffer.ReadShort());
-            Assert.AreEqual(9223372036854775807, _buffer.ReadLong());
+            Assert.AreEqual((short)2, _buffer.Read<short>());
+            Assert.AreEqual(9223372036854775807, _buffer.Read<long>());
         }
 
         [TestMethod]
@@ -459,7 +459,7 @@ namespace Server.Shared.Tests
             _buffer.ReadSkip<byte>();
             _buffer.ReadSkip<short>();
 
-            Assert.AreEqual(9223372036854775807, _buffer.ReadLong());
+            Assert.AreEqual(9223372036854775807, _buffer.Read<long>());
         }
 
         [TestMethod]
@@ -472,7 +472,7 @@ namespace Server.Shared.Tests
 
             _buffer.ReadSkipString();
 
-            Assert.AreEqual(9223372036854775807, _buffer.ReadLong());
+            Assert.AreEqual(9223372036854775807, _buffer.Read<long>());
         }
     }
 }

@@ -6,7 +6,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
-using System.Security.Cryptography;
+using System.Net;
 using static Common.Log;
 using static Common.Errors;
 
@@ -14,6 +14,8 @@ namespace Common
 {
     public static class Util
     {
+        public const int MaxStackLimit = 1024;
+
         public static string ByteArrayToHexStr(byte[] bytes, bool reverse = false)
         {
             int arrayLen = bytes.Length;
@@ -70,9 +72,23 @@ namespace Common
 
         public static byte[] DigestSHA1(byte[] bytes)
         {
-            using (SHA1 sha1 = new SHA1Managed())
+            using (var sha1 = new SHA1Hash())
             {
-                return sha1.ComputeHash(bytes);
+                sha1.UpdateData(bytes, bytes.Length);
+                sha1.Finish();
+                return sha1.Digest!;
+            }
+        }
+
+        public static byte[] DigestSHA1(params byte[][] pack)
+        {
+            using (var sha1 = new SHA1Hash())
+            {
+                foreach(var data in pack)
+                    sha1.UpdateData(data);
+
+                sha1.Finish();
+                return sha1.Digest!;
             }
         }
 
@@ -160,6 +176,55 @@ namespace Common
         public static int GetPID()
         {
             return Process.GetCurrentProcess().Id;
+        }
+
+        public static bool IPv4InNetwork(IPAddress address, IPAddress subnetMask, IPAddress network)
+        {
+            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) // IPv4
+            {
+                Span<byte> addressOctets = stackalloc byte[4];
+                address.TryWriteBytes(addressOctets, out var bytesCount);
+
+                Span<byte> subnetOctets = stackalloc byte[4];
+                subnetMask.TryWriteBytes(subnetOctets, out bytesCount);
+
+                Span<byte> networkOctets = stackalloc byte[4];
+                network.TryWriteBytes(networkOctets, out bytesCount);
+                networkOctets[3] = 0; // Force to a sub network address
+
+                return
+                    (networkOctets[0] == (addressOctets[0] & subnetOctets[0])) &&
+                    (networkOctets[1] == (addressOctets[1] & subnetOctets[1])) &&
+                    (networkOctets[2] == (addressOctets[2] & subnetOctets[2])) &&
+                    (networkOctets[3] == (addressOctets[3] & subnetOctets[3]));
+            }
+            else // IPv6
+            {
+                return false;
+            }
+        }
+
+        public static IPAddress? ResolveIPAddress(string hostnameOrIp)
+        {
+            try
+            {
+                IPHostEntry host = Dns.GetHostEntry(hostnameOrIp);
+                if (host.AddressList.Length == 0)
+                    return null;
+
+                foreach(var addr in host.AddressList)
+                {
+                    if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                        return addr;
+                }
+            }
+            catch
+            {
+                if (IPAddress.TryParse(hostnameOrIp, out var address))
+                    return address;
+            }
+
+            return null;
         }
     }
 }
