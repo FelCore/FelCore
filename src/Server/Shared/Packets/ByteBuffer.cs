@@ -84,21 +84,13 @@ namespace Server.Shared
         {
         }
 
-        public ByteBuffer(ByteBuffer right, bool move = false)
+        public ByteBuffer(ByteBuffer right)
         {
             _wpos = right._wpos;
             _rpos = right._rpos;
 
-            if (move)
-            {
-                _storage = right.Move();
-            }
-            else
-            {
-                var temp = ArrayPool<byte>.Shared.Rent(right._storage.Length);
-                Buffer.BlockCopy(right._storage, 0, temp, 0, right._storage.Length);
-                _storage = temp;
-            }
+            _storage = ArrayPool<byte>.Shared.Rent(right._storage.Length);
+            Buffer.BlockCopy(right._storage, 0, _storage, 0, right._storage.Length);
         }
 
         public ByteBuffer(MessageBuffer buffer)
@@ -123,20 +115,11 @@ namespace Server.Shared
             Dispose(false);
         }
 
+        public static implicit operator ByteBuffer(MessageBuffer buffer) => new ByteBuffer(buffer);
+
         public ReadOnlySpan<byte> ReadSpan => _storage.AsSpan(new Range(_rpos, _wpos));
 
         public ReadOnlySpan<byte> WriteSpan => _storage.AsSpan(0, _wpos);
-
-        public byte[] Move()
-        {
-            _wpos = 0;
-            _rpos = 0;
-
-            var ret = _storage;
-            _storage = ArrayPool<byte>.Shared.Rent(1);
-
-            return ret;
-        }
 
         public int Size()
         {

@@ -28,21 +28,13 @@ namespace Common
 
         public MessageBuffer() : this(DefaultSize) { }
 
-        public MessageBuffer(MessageBuffer right, bool move = false)
+        public MessageBuffer(MessageBuffer right)
         {
             _wpos = right._wpos;
             _rpos = right._rpos;
 
-            if (move)
-            {
-                _storage = right.Move();
-            }
-            else
-            {
-                var temp = ArrayPool<byte>.Shared.Rent(right._storage.Length);
-                Buffer.BlockCopy(right._storage, 0, temp, 0, right._storage.Length);
-                _storage = temp;
-            }
+            _storage = ArrayPool<byte>.Shared.Rent(right._storage.Length);
+            Buffer.BlockCopy(right._storage, 0, _storage, 0, right._storage.Length);
         }
 
         public byte[] Move()
