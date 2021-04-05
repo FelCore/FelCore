@@ -26,6 +26,7 @@ namespace Server.Database
         LOGIN_INS_ACCOUNT_AUTO_BANNED,
         LOGIN_INS_IP_AUTO_BANNED,
         LOGIN_SEL_REALM_CHARACTER_COUNTS,
+        LOGIN_SEL_RECONNECTCHALLENGE,
 
         MAX_LOGINDATABASE_STATEMENTS
     }
@@ -54,6 +55,9 @@ namespace Server.Database
             PrepareStatement(LOGIN_SEL_LOGONCHALLENGE, "SELECT a.id, a.username, a.locked, a.lock_country, a.last_ip, a.failed_logins, ab.unbandate > UNIX_TIMESTAMP() OR ab.unbandate = ab.bandate, " +
                 "ab.unbandate = ab.bandate, aa.SecurityLevel, a.totp_secret, a.salt, a.verifier " +
                 "FROM account a LEFT JOIN account_access aa ON a.id = aa.AccountID LEFT JOIN account_banned ab ON ab.id = a.id AND ab.active = 1 WHERE a.username = ?", CONNECTION_ASYNC);
+            PrepareStatement(LOGIN_SEL_RECONNECTCHALLENGE, "SELECT a.id, UPPER(a.username), a.locked, a.lock_country, a.last_ip, a.failed_logins, ab.unbandate > UNIX_TIMESTAMP() OR ab.unbandate = ab.bandate, " +
+                "ab.unbandate = ab.bandate, aa.SecurityLevel, a.session_key " +
+                "FROM account a LEFT JOIN account_access aa ON a.id = aa.AccountID LEFT JOIN account_banned ab ON ab.id = a.id AND ab.active = 1 WHERE a.username = ? AND a.session_key IS NOT NULL", CONNECTION_ASYNC);
             PrepareStatement(LOGIN_INS_ACCOUNT, "INSERT INTO account(username, salt, verifier, reg_mail, email, joindate) VALUES(?, ?, ?, ?, ?, NOW())", CONNECTION_SYNCH);
             PrepareStatement(LOGIN_INS_REALM_CHARACTERS_INIT, "INSERT INTO realmcharacters (realmid, acctid, numchars) SELECT realmlist.id, account.id, 0 FROM realmlist, account LEFT JOIN realmcharacters ON acctid = account.id WHERE acctid IS NULL", CONNECTION_ASYNC);
             PrepareStatement(LOGIN_UPD_LOGONPROOF, "UPDATE account SET session_key = ?, last_ip = ?, last_login = NOW(), locale = ?, failed_logins = 0, os = ? WHERE username = ?", CONNECTION_SYNCH);

@@ -3,6 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
+using System.Numerics;
 using System.Text;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
@@ -18,6 +19,7 @@ using Server.Database;
 using static Server.Database.LoginStatements;
 using Server.Shared;
 using static Server.Shared.RealmList;
+using static Common.RandomEngine;
 
 namespace Server.AuthServer
 {
@@ -173,7 +175,8 @@ namespace Server.AuthServer
         ExpansionFlags _expversion;
 
         SRP6? _srp6;
-        byte[]? _sessionKey;
+        byte[]? _sessionKey; // Len 40
+        byte[]? _reconnectProof; // Len 16
 
         static AuthSession()
         {
@@ -636,12 +639,131 @@ namespace Server.AuthServer
 
         bool HandleReconnectChallenge()
         {
-            return false;
+            _status = STATUS_CLOSED;
+
+            ref readonly var challenge = ref MemoryMarshal.AsRef<AuthLogonChallenge_C>(GetReadBuffer().ReadSpan);
+
+            if (challenge.size - (sizeof(AuthLogonChallenge_C) - AUTH_LOGON_CHALLENGE_INITIAL_SIZE - 1) != challenge.I_len)
+                return false;
+
+            string login = string.Empty;
+            fixed (byte* ptr = challenge.I)
+            {
+                login = Encoding.UTF8.GetString(ptr, challenge.I_len);
+            }
+
+            FEL_LOG_DEBUG("server.authserver", "[ReconnectChallenge] '{0}'", login);
+
+            _build = challenge.build;
+            _expversion = AuthHelper.IsPostBCAcceptedClientBuild(_build) ? POST_BC_EXP_FLAG : (AuthHelper.IsPreBCAcceptedClientBuild(_build) ? PRE_BC_EXP_FLAG : NO_VALID_EXP_FLAG);
+
+            fixed (byte* ptr = challenge.os)
+                _os = Encoding.UTF8.GetString(ptr, 4).TrimEnd('\0');
+
+            // Restore string order as its byte order is reversed
+            _os = _os.Reverse();
+
+            fixed (byte* ptr = challenge.country)
+                _localizationName = Encoding.UTF8.GetString(ptr, 4).TrimEnd('\0');
+            _localizationName = _localizationName.Reverse();
+
+            // Get the account details from the account table
+            var stmt = DB.LoginDatabase.GetPreparedStatement(LOGIN_SEL_RECONNECTCHALLENGE);
+            stmt.Parameters[0] = login;
+
+            _queryProcessor.AddCallback(DB.LoginDatabase.AsyncQuery(stmt).WithPreparedCallback(ReconnectChallengeCallback));
+            return true;
+        }
+
+        void ReconnectChallengeCallback(PreparedQueryResult? result)
+        {
+            ByteBuffer pkt = new();
+            pkt.Append((byte)AUTH_RECONNECT_CHALLENGE);
+
+            if (result == null)
+            {
+                pkt.Append((byte)WOW_FAIL_UNKNOWN_ACCOUNT);
+                SendPacket(pkt);
+                return;
+            }
+
+            var fields = result.Fetch();
+
+            _accountInfo.LoadResult(fields);
+
+            _sessionKey = new byte[SRP6.SESSION_KEY_LENGTH];
+            fields.GetBytes(9, 0, _sessionKey, 0, SRP6.SESSION_KEY_LENGTH);
+
+            _reconnectProof = new byte[16];
+
+            GetRandomBytes(_reconnectProof);
+            _status = STATUS_RECONNECT_PROOF;
+
+            pkt.Append((byte)WOW_SUCCESS);
+            pkt.Append(_reconnectProof);
+            pkt.Append(VersionChallenge);
+
+            SendPacket(pkt);
         }
 
         bool HandleReconnectProof()
         {
-            return false;
+            FEL_LOG_DEBUG("server.authserver", "Entering _HandleReconnectProof");
+            _status = STATUS_CLOSED;
+
+            ref readonly var reconnectProof = ref MemoryMarshal.AsRef<AuthReconnectProof_C>(GetReadBuffer().ReadSpan);
+
+            if (string.IsNullOrEmpty(_accountInfo.Login))
+                return false;
+
+            BigInteger t1;
+            fixed(byte* r1Ptr = reconnectProof.R1)
+                t1 = new(new ReadOnlySpan<byte>(r1Ptr, 16), true);
+
+            var sha = new SHA1Hash();
+            sha.UpdateData(_accountInfo.Login);
+            var t1Bytes = new byte[16];
+            t1.TryWriteBytes(t1Bytes, out _, true);
+            sha.UpdateData(t1Bytes);
+            sha.UpdateData(_reconnectProof!);
+            sha.UpdateData(_sessionKey!);
+            sha.Finish();
+
+            bool r2Match = false;
+
+            fixed(byte* r2Ptr = reconnectProof.R2)
+                r2Match = new ReadOnlySpan<byte>(r2Ptr, 20).SequenceEqual(sha.Digest);
+
+            if (r2Match)
+            {
+                bool versionValid = false;
+                fixed (byte* ptrR1 = reconnectProof.R1, ptrR3 = reconnectProof.R3)
+                    versionValid = VerifyVersion(new ReadOnlySpan<byte>(ptrR1, 16), new ReadOnlySpan<byte>(ptrR3, 20), true);
+
+                if (!versionValid)
+                {
+                    ByteBuffer packet = new();
+                    packet.Append((byte)AUTH_RECONNECT_PROOF);
+                    packet.Append((byte)WOW_FAIL_VERSION_INVALID);
+                    SendPacket(packet);
+                    return true;
+                }
+
+                // Sending response
+                ByteBuffer pkt = new();
+                pkt.Append((byte)AUTH_RECONNECT_PROOF);
+                pkt.Append((byte)WOW_SUCCESS);
+                pkt.Append((ushort)0); // LoginFlags, 1 has account message
+                SendPacket(pkt);
+                _status = STATUS_AUTHED;
+                return true;
+            }
+            else
+            {
+                FEL_LOG_ERROR("server.authserver.hack", "'{0}:{1}' [ERROR] user {2} tried to login, but session is invalid.", RemoteAddress.ToString(),
+                    RemotePort, _accountInfo.Login);
+                return false;
+            }
         }
 
         bool HandleRealmList()

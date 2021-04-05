@@ -27,7 +27,7 @@ CREATE TABLE `account` (
   `username` varchar(32) NOT NULL DEFAULT '',
   `salt` binary(32) NOT NULL,
   `verifier` binary(32) NOT NULL,
-  `session_key` binary(40) NOT NULL DEFAULT '\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0',
+  `session_key` binary(40) DEFAULT NULL,
   `totp_secret` varchar(100) NOT NULL DEFAULT '',
   `email` varchar(255) NOT NULL DEFAULT '',
   `reg_mail` varchar(255) NOT NULL DEFAULT '',
