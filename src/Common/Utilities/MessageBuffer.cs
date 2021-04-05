@@ -7,7 +7,7 @@ using System.Buffers;
 
 namespace Common
 {
-    public unsafe class MessageBuffer
+    public unsafe class MessageBuffer : IDisposable
     {
         public const int DefaultSize = 0x20;
 
@@ -23,7 +23,7 @@ namespace Common
 
         ~MessageBuffer()
         {
-            ArrayPool<byte>.Shared.Return(_storage);
+            Dispose(false);
         }
 
         public MessageBuffer() : this(DefaultSize) { }
@@ -129,6 +129,27 @@ namespace Common
         {
             data.CopyTo(_storage.AsSpan(_wpos));
             WriteCompleted(data.Length);
+        }
+
+        bool _disposed;
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            {
+            }
+
+            ArrayPool<byte>.Shared.Return(_storage);
+
+            _disposed = true;
         }
     }
 }

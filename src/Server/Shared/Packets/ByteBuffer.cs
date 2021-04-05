@@ -65,7 +65,7 @@ namespace Server.Shared
         }
     }
 
-    public unsafe class ByteBuffer
+    public unsafe class ByteBuffer : IDisposable
     {
         public const int DEFAULT_SIZE = 0x20;
 
@@ -120,7 +120,7 @@ namespace Server.Shared
 
         ~ByteBuffer()
         {
-            ArrayPool<byte>.Shared.Return(_storage);
+            Dispose(false);
         }
 
         public ReadOnlySpan<byte> ReadSpan => _storage.AsSpan(new Range(_rpos, _wpos));
@@ -440,6 +440,27 @@ namespace Server.Shared
             sb.Append(" ");
 
             Console.WriteLine(sb.ToString());
+        }
+
+        bool _disposed;
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            {
+            }
+
+            ArrayPool<byte>.Shared.Return(_storage);
+
+            _disposed = true;
         }
     }
 }
