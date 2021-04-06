@@ -82,6 +82,7 @@ namespace Server.Shared
                     if (!socket.IsOpen())
                     {
                         SocketRemoved(socket);
+                        socket.Dispose();
 
                         Interlocked.Decrement(ref _connections);
                     }
@@ -111,6 +112,7 @@ namespace Server.Shared
                             sock.CloseSocket();
 
                         SocketRemoved(sock);
+                        sock.Dispose();
                         Interlocked.Decrement(ref _connections);
                         return true;
                     }
@@ -120,7 +122,13 @@ namespace Server.Shared
             }
 
             FEL_LOG_DEBUG("misc", "Network Thread exits");
+
+            foreach (var sock in _newSockets)
+                sock.Dispose();
             _newSockets.Clear();
+
+            foreach (var sock in _Sockets)
+                sock.Dispose();
             _Sockets.Clear();
         }
 
