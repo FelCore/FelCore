@@ -35,7 +35,7 @@ namespace Server.Database
         }
     }
 
-    public class DatabaseWorkerPool<T, Statements> : IDisposable
+    public class DatabaseWorkerPool<T, Statements>
         where T : MySqlConnectionProxy<Statements>
         where Statements : unmanaged, Enum
     {
@@ -469,6 +469,8 @@ namespace Server.Database
 
         public void Close()
         {
+            if (_disposed) return;
+
             FEL_LOG_INFO("sql.driver", "Closing down DatabasePool '{0}'.", GetDatabaseName());
 
             //! Closes the actualy MySQL connection.
@@ -486,6 +488,9 @@ namespace Server.Database
             foreach(var conn in _connections[(int)IDX_SYNCH])
                 conn.Dispose();
             _connections[(int)IDX_SYNCH].Clear();
+
+            _queue.Cancel();
+            _disposed = true;
 
             FEL_LOG_INFO("sql.driver", "All connections on DatabasePool '{0}' closed.", GetDatabaseName());
         }
@@ -585,23 +590,6 @@ namespace Server.Database
         {
             var val = index.AsInteger<Statements, int>();
             return new PreparedStatement<T>(val, _preparedStatementSize[val]);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-
-        protected void Dispose(bool disposing)
-        {
-            if (_disposed) return;
-
-            if (disposing)
-            {
-                _queue.Cancel();
-            }
-
-            _disposed = true;
         }
     }
 }
