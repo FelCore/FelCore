@@ -178,6 +178,8 @@ namespace Server.AuthServer
         byte[]? _sessionKey; // Len 40
         byte[]? _reconnectProof; // Len 16
 
+        SHA1Hash _sha1;
+
         static AuthSession()
         {
             Handlers[AUTH_LOGON_CHALLENGE] = new AuthHandler { Status = STATUS_CHALLENGE, PacketSize = AUTH_LOGON_CHALLENGE_INITIAL_SIZE, Handler = (s) => s.HandleLogonChallenge() };
@@ -193,6 +195,12 @@ namespace Server.AuthServer
         {
             _queryProcessor = new AsyncCallbackProcessor<QueryCallback>();
             _status = AuthStatus.STATUS_CHALLENGE;
+            _sha1 = new SHA1Hash();
+        }
+
+        ~AuthSession()
+        {
+            Dispose(false);
         }
 
         public void SendPacket(ByteBuffer packet)
@@ -424,7 +432,7 @@ namespace Server.AuthServer
             var verifier = new byte[32];
             fields.GetBytes(10, 0, salt, 0, 32);
             fields.GetBytes(11, 0, verifier, 0, 32);
-            _srp6 = new SRP6(_accountInfo.Login, salt, verifier);
+            _srp6 = new SRP6(_accountInfo.Login, salt, verifier, _sha1);
 
             // Fill the response packet with the result
             if (AuthHelper.IsAcceptedClientBuild(_build))
@@ -720,19 +728,17 @@ namespace Server.AuthServer
             fixed(byte* r1Ptr = reconnectProof.R1)
                 t1 = new(new ReadOnlySpan<byte>(r1Ptr, 16), true);
 
-            var sha = new SHA1Hash();
-            sha.UpdateData(_accountInfo.Login);
-            var t1Bytes = new byte[16];
-            t1.TryWriteBytes(t1Bytes, out _, true);
-            sha.UpdateData(t1Bytes);
-            sha.UpdateData(_reconnectProof!);
-            sha.UpdateData(_sessionKey!);
-            sha.Finish();
+            _sha1.Initialize();
+            _sha1.UpdateData(_accountInfo.Login);
+            _sha1.UpdateData(t1);
+            _sha1.UpdateData(_reconnectProof!);
+            _sha1.UpdateData(_sessionKey!);
+            _sha1.Finish();
 
             bool r2Match = false;
 
             fixed(byte* r2Ptr = reconnectProof.R2)
-                r2Match = new ReadOnlySpan<byte>(r2Ptr, 20).SequenceEqual(sha.Digest);
+                r2Match = new ReadOnlySpan<byte>(r2Ptr, 20).SequenceEqual(_sha1.Digest);
 
             if (r2Match)
             {
@@ -912,11 +918,23 @@ namespace Server.AuthServer
             versionHash.CopyTo(data.Slice(a.Length));
 
             Span<byte> hash = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
-            var sha1 = new SHA1Hash();
-            sha1.ComputeHash(data, hash, out _);
-            sha1.Dispose();
+            _sha1.Initialize();
+            _sha1.ComputeHash(data, hash, out _);
 
             return versionProof.SequenceEqual(hash);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    _sha1.Dispose();
+                    _srp6?.Dispose();
+                }
+            }
+            base.Dispose(disposing);
         }
     }
 }

@@ -156,10 +156,10 @@ namespace Common
 
         bool _disposed;
 
-        public SRP6(string username, byte[] salt, ReadOnlySpan<byte> verifier)
+        public SRP6(string username, byte[] salt, ReadOnlySpan<byte> verifier, SHA1Hash sha1)
         {
-            _sha1 = new SHA1Hash();
             _username = username;
+            _sha1 = sha1;
 
             Span<byte> span = stackalloc byte[32];
             GetRandomBytes(span);
@@ -235,7 +235,6 @@ namespace Common
         {
             if (!_disposed)
             {
-                _sha1?.Dispose();
                 BufferPool.Return(B, true);
 
                 _disposed = true;
