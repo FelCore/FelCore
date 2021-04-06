@@ -543,7 +543,7 @@ namespace Server.AuthServer
                 var stmt = DB.LoginDatabase.GetPreparedStatement(LOGIN_UPD_LOGONPROOF);
                 stmt.Parameters[0] = _sessionKey;
                 stmt.Parameters[1] = RemoteAddress.ToString();
-                stmt.Parameters[2] = GetLocaleByName(_localizationName!);
+                stmt.Parameters[2] = (byte)GetLocaleByName(_localizationName!);
                 stmt.Parameters[3] = _os;
                 stmt.Parameters[4] = _accountInfo.Login;
                 DB.LoginDatabase.DirectExecute(stmt);
