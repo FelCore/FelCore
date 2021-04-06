@@ -63,9 +63,15 @@ namespace Server.Shared
             _remotePort = ipEndPoint.Port;
         }
 
+        ~SocketBase()
+        {
+            Dispose(false);
+        }
+
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -76,6 +82,13 @@ namespace Server.Shared
             {
                 CloseSocket();
                 _socket.Dispose();
+                _readBuffer.Dispose();
+
+                while (_writeQueue.Count > 0)
+                {
+                    var buffer = _writeQueue.Dequeue();
+                    buffer.Dispose();
+                }
             }
 
             _disposed = true;
