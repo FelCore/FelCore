@@ -1,0 +1,3 @@
+[submodule "dep/MySqlSharp"]
+	path = dep/MySqlSharp
+	url = git@github.com:ryancheung/MySqlSharp.git

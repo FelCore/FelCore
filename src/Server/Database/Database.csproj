@@ -12,9 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\..\dep\MySqlConnector\src\MySqlConnector\**\*.cs" LinkBase="Libs/MySqlConnector" />
-    <Compile Remove="..\..\..\dep\MySqlConnector\src\MySqlConnector\bin\**\*.cs" />
-    <Compile Remove="..\..\..\dep\MySqlConnector\src\MySqlConnector\obj\**\*.cs" />
+    <Compile Include="..\..\..\dep\MySqlSharp\src\**\*.cs" LinkBase="Libs/MySqlSharp" />
+    <Compile Remove="..\..\..\dep\MySqlSharp\src\bin\**\*.cs" />
+    <Compile Remove="..\..\..\dep\MySqlSharp\src\obj\**\*.cs" />
   </ItemGroup>
 
 </Project>
