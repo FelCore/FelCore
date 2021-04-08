@@ -1,3 +1,0 @@
-[submodule "dep/MySqlConnector"]
-	path = dep/MySqlConnector
-	url = git@github.com:FelCore/MySqlConnector.git
