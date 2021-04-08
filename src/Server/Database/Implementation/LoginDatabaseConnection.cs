@@ -31,7 +31,7 @@ namespace Server.Database
         MAX_LOGINDATABASE_STATEMENTS
     }
 
-    public class LoginDatabaseConnection : MySqlConnectionProxy<LoginStatements>
+    public class LoginDatabaseConnection : MySqlConnection<LoginStatements>
     {
         public LoginDatabaseConnection(MySqlConnectionInfo connectionInfo) : base(connectionInfo)
         {
@@ -45,7 +45,7 @@ namespace Server.Database
         protected override void DoPrepareStatements()
         {
             if (!_reconnecting)
-                Array.Resize(ref _preparedStatementQueries, (int)MAX_LOGINDATABASE_STATEMENTS);
+                Array.Resize(ref _stmts, (int)MAX_LOGINDATABASE_STATEMENTS);
 
             PrepareStatement(LOGIN_SEL_REALMLIST, "SELECT id, name, address, localAddress, localSubnetMask, port, icon, flag, timezone, allowedSecurityLevel, population, gamebuild FROM realmlist WHERE flag <> 3 ORDER BY name", CONNECTION_SYNCH);
             PrepareStatement(LOGIN_DEL_EXPIRED_IP_BANS, "DELETE FROM ip_banned WHERE unbandate<>bandate AND unbandate<=UNIX_TIMESTAMP()", CONNECTION_ASYNC);

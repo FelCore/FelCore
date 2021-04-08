@@ -13,11 +13,11 @@ namespace Server.Database
         Thread _workerThread;
         InterlockedBoolean _cancelationToken;
         ProducerConsumerQueue<SqlOperation> _queue;
-        MySqlConnectionProxyBase _connectionProxy;
+        MySqlConnection _connectionProxy;
 
         private bool _disposed;
 
-        public DatabaseWorker(ProducerConsumerQueue<SqlOperation> newQueue, MySqlConnectionProxyBase connectionProxy)
+        public DatabaseWorker(ProducerConsumerQueue<SqlOperation> newQueue, MySqlConnection connectionProxy)
         {
             _queue = newQueue;
             _connectionProxy = connectionProxy;

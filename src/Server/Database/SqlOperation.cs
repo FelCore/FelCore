@@ -4,7 +4,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using MySqlConnector;
 using Common;
 using static Common.Log;
 using static Common.Errors;
@@ -49,9 +48,9 @@ namespace Server.Database
             return 0;
         }
         public virtual bool Execute() { return false; }
-        public virtual void SetConnection(MySqlConnectionProxyBase conn) { _conn = conn; }
+        public virtual void SetConnection(MySqlConnection conn) { _conn = conn; }
 
-        private MySqlConnectionProxyBase? _conn;
-        public MySqlConnectionProxyBase? Conn => _conn;
+        private MySqlConnection? _conn;
+        public MySqlConnection? Conn => _conn;
     }
 }

@@ -11,7 +11,7 @@ namespace Server.Database
 {
     public class SqlQueryHolderBase
     {
-        (PreparedStatementBase, PreparedQueryResult?)[] _queries = new (PreparedStatementBase, PreparedQueryResult?)[0];
+        (PreparedStatementBase, PreparedQueryResult?)[] _queries = Array.Empty<(PreparedStatementBase, PreparedQueryResult?)>();
 
         public (PreparedStatementBase, PreparedQueryResult?)[] Queries => _queries;
 
@@ -41,13 +41,19 @@ namespace Server.Database
 
         public void SetPreparedResult(int index, PreparedQueryResult? result)
         {
+            if (result != null && result.GetRowCount() == 0)
+            {
+                result.Dispose();
+                result = null;
+            }
+
             /// store the result in the holder
             if (index < _queries.Length)
                 _queries[index].Item2 = result;
         }
     }
 
-    public class SqlQueryHolder<T> : SqlQueryHolderBase where T : MySqlConnectionProxyBase
+    public class SqlQueryHolder<T> : SqlQueryHolderBase where T : MySqlConnection
     {
         public bool SetPreparedQuery(int index, PreparedStatement<T> stmt)
         {

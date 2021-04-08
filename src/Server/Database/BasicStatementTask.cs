@@ -37,7 +37,7 @@ namespace Server.Database
             if (_hasResult)
             {
                 var result = Conn.Query(_sql);
-                if (result == null || !result.NextRow())
+                if (result == null || result.GetRowCount() == 0 || !result.NextRow())
                 {
                     if (result != null)
                         result.Dispose();

@@ -8,7 +8,6 @@ using System.Text;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
-using MySqlConnector.Core;
 using Common;
 using Common.Extensions;
 using static Common.Log;
@@ -123,7 +122,7 @@ namespace Server.AuthServer
 
     public struct AccountInfo
     {
-        public void LoadResult(Row fields)
+        public void LoadResult(ReadOnlySpan<Field> fields)
         {
             //          0           1         2               3          4                5                                                             6
             //SELECT a.id, a.username, a.locked, a.lock_country, a.last_ip, a.failed_logins, ab.unbandate > UNIX_TIMESTAMP() OR ab.unbandate = ab.bandate,
@@ -131,15 +130,15 @@ namespace Server.AuthServer
             //       ab.unbandate = ab.bandate, aa.SecurityLevel (, more query-specific fields)
             //FROM account a LEFT JOIN account_access aa ON a.id = aa.AccountID LEFT JOIN account_banned ab ON ab.id = a.id AND ab.active = 1 WHERE a.username = ?
 
-            Id = fields.GetUInt32(0);
-            Login = fields.GetString(1).ToUpperInvariant();
-            IsLockedToIP = fields.GetBoolean(2);
-            LockCountry = fields.GetString(3);
-            LastIP = fields.GetString(4);
-            FailedLogins = fields.GetUInt32(5);
-            IsBanned = fields.GetUInt64(6) != 0;
-            IsPermanenetlyBanned = fields.GetUInt64(7) != 0;
-            SecurityLevel = (AccountTypes)(fields.GetByte(8));
+            Id = fields[0].GetUInt32();
+            Login = fields[1].GetString().ToUpperInvariant();
+            IsLockedToIP = fields[2].GetBool();
+            LockCountry = fields[3].GetString();
+            LastIP = fields[4].GetString();
+            FailedLogins = fields[5].GetUInt32();
+            IsBanned = fields[6].GetUInt64() != 0;
+            IsPermanenetlyBanned = fields[7].GetUInt64() != 0;
+            SecurityLevel = (AccountTypes)(fields[8].GetUInt8());
         }
 
         public uint Id;
@@ -235,7 +234,7 @@ namespace Server.AuthServer
                 do
                 {
                     var fields = result.Fetch();
-                    if (fields.GetUInt64(0) != 0)
+                    if (fields[0].GetUInt64() != 0)
                         banned = true;
 
                 } while (result.NextRow());
@@ -424,15 +423,11 @@ namespace Server.AuthServer
 
             byte securityFlags = 0;
             // Check if a TOTP token is needed
-            _totpSecret = fields.GetString(9);
+            _totpSecret = fields[9].GetString();
             if (!string.IsNullOrEmpty(_totpSecret))
                 securityFlags = 4;
 
-            var salt = new byte[32];
-            var verifier = new byte[32];
-            fields.GetBytes(10, 0, salt, 0, 32);
-            fields.GetBytes(11, 0, verifier, 0, 32);
-            _srp6 = new SRP6(_accountInfo.Login, salt, verifier, _sha1);
+            _srp6 = new SRP6(_accountInfo.Login, fields[10].GetBinary(32), fields[11].GetBinary(32), _sha1);
 
             // Fill the response packet with the result
             if (AuthHelper.IsAcceptedClientBuild(_build))
@@ -698,9 +693,7 @@ namespace Server.AuthServer
             var fields = result.Fetch();
 
             _accountInfo.LoadResult(fields);
-
-            _sessionKey = new byte[SRP6.SESSION_KEY_LENGTH];
-            fields.GetBytes(9, 0, _sessionKey, 0, SRP6.SESSION_KEY_LENGTH);
+            _sessionKey = fields[9].GetBinary(SRP6.SESSION_KEY_LENGTH);
 
             _reconnectProof = new byte[16];
 
@@ -792,7 +785,7 @@ namespace Server.AuthServer
                 do
                 {
                     var fields = result.Fetch();
-                    characterCounts[fields.GetInt32(0)] = fields.GetByte(1);
+                    characterCounts[fields[0].GetInt32()] = fields[1].GetUInt8();
                 } while (result.NextRow());
             }
 

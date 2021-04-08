@@ -325,17 +325,20 @@ namespace Server.Database.Updater
             {
                 var field = result.Fetch();
 
-                var path = field.GetString(0);
+                var path = field[0].GetString();
                 if (path.Substring(0, 1) == "$")
-                    path = Path.Combine(_sourceDirectory, path.Substring(1));
+                    path = path.Substring(1);
+                if (path.Substring(0, 1) == "/")
+                    path = path.Substring(1);
 
+                path = Path.Combine(_sourceDirectory, path);
                 if (!Directory.Exists(path))
                 {
                     FEL_LOG_WARN("sql.updates", "DBUpdater: Given update include directory \"{0}\" does not exist, skipped!", path);
                     continue;
                 }
 
-                directories.Add(new DirectoryEntry(path, field.GetString(1).ToEnum<State>()));
+                directories.Add(new DirectoryEntry(path, field[1].GetString().ToEnum<State>()));
 
                 FEL_LOG_TRACE("sql.updates", "Added applied file \"{0}\" from remote.", Path.GetFileName(path));
 
@@ -357,8 +360,8 @@ namespace Server.Database.Updater
             do
             {
                 var field = result.Fetch();
-                var entry = new AppliedFileEntry(field.GetString(0), field.GetString(1),
-                    field.GetString(2).ToEnum<State>(), field.GetUInt32(3));
+                var entry = new AppliedFileEntry(field[0].GetString(), field[1].GetString(),
+                    field[2].GetString().ToEnum<State>(), field[3].GetUInt32());
                 map.Add(entry.Name, entry);
             }
             while (result.NextRow());

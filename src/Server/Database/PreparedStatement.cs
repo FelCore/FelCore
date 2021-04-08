@@ -3,74 +3,66 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
-using System.Text;
+using System.Buffers;
 using Common;
 using static Common.Errors;
 
 namespace Server.Database
 {
-    public class PreparedStatementBase
+    public class PreparedStatementBase : IDisposable
     {
         private int _index;
         public int Index => _index;
 
-        public readonly object?[] Parameters;
+        private object?[] _parameters;
+        public object?[] Parameters => _parameters;
 
         private byte _parameterCount;
         public byte ParameterCount => _parameterCount;
 
-        private string? _commandText;
-        public string? CommandText => _commandText;
-
-
-        public PreparedStatementBase(int index, byte parameterCount)
+        public PreparedStatementBase(int index, byte paramCount)
         {
             _index = index;
 
-            _parameterCount = parameterCount;
-            Parameters = new object?[_parameterCount];
-        }
-
-        public void Bind(PreparedStatementQuery preparedQuery)
-        {
-            _commandText = preparedQuery.Sql;
-        }
-
-        public void SetValue(int index, object value)
-        {
-            Parameters[index] = value;
+            _parameterCount = paramCount;
+            _parameters = ArrayPool<object?>.Shared.Rent(_parameterCount);
         }
 
         public void Clear()
         {
             for (byte i = 0; i < _parameterCount; i++)
-                Parameters[i] = null;
+                _parameters[i] = null;
         }
 
-        public string GetQueryString()
+        ~PreparedStatementBase()
         {
-            if (string.IsNullOrEmpty(_commandText))
-                return string.Empty;
+            Dispose(false);
+        }
 
-            var sb = new StringBuilder(_commandText);
-            int startIndex = 0;
-            foreach(var val in Parameters)
+        bool _disposed;
+        public bool Disposed => _disposed;
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        void Dispose(bool disposing)
+        {
+            if (!_disposed)
             {
-                var index = sb.ToString().IndexOf('?', startIndex);
-                if (index != -1)
+                if (disposing)
                 {
-                    startIndex = index;
-
-                    sb.Remove(index, 1);
-                    sb.Insert(index, $"'{val}'");
                 }
-            }
 
-            return sb.ToString();
+                ArrayPool<object?>.Shared.Return(_parameters);
+            }
+            _disposed = true;
         }
     }
 
-    public class PreparedStatement<T> : PreparedStatementBase where T : MySqlConnectionProxyBase 
+    public class PreparedStatement<T> : PreparedStatementBase where T : MySqlConnection 
     {
         public PreparedStatement(int index, byte parameterCount) : base(index, parameterCount)
         {
@@ -100,8 +92,15 @@ namespace Server.Database
             {
                 var result = Conn.Query(_stmt);
 
+                if (result == null || result.GetRowCount() == 0)
+                {
+                    result?.Dispose();
+                    _result.SetResult(null);
+                    return false;
+                }
+
                 _result.SetResult(result);
-                return result != null;
+                return true;
             }
 
             return Conn.Execute(_stmt);

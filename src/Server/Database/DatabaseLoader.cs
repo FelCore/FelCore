@@ -4,9 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using MySqlConnector;
 using static Common.Log;
 using static Common.ConfigMgr;
+using static MySqlSharp.ErrorServer;
 using Server.Database.Updater;
 
 namespace Server.Database
@@ -43,7 +43,7 @@ namespace Server.Database
         }
 
         public void AddDatabase<T, Statements>(DatabaseWorkerPool<T, Statements> pool, string name)
-            where T : MySqlConnectionProxy<Statements>
+            where T : MySqlConnection<Statements>
             where Statements : unmanaged, Enum
         {
             bool updatesEnabledForThis = DBUpdater<T, Statements>.IsEnabled(_updateFlags);
@@ -69,18 +69,18 @@ namespace Server.Database
                 pool.SetConnectionInfo(dbString, asyncThreads, synchThreads);
 
                 var error = pool.Open();
-                if (error != MySqlErrorCode.None)
+                if (error != 0)
                 {
                     // Database does not exist
-                    if (error == MySqlErrorCode.UnknownDatabase && updatesEnabledForThis && _autoSetup)
+                    if (error == (int)ER_BAD_DB_ERROR && updatesEnabledForThis && _autoSetup)
                     {
                         // Try to create the database and connect again if auto setup is enabled
-                        if (DBUpdater<T, Statements>.Create(pool) && (pool.Open() == MySqlErrorCode.None))
+                        if (DBUpdater<T, Statements>.Create(pool) && (pool.Open() == 0))
                             error = 0;
                     }
 
                     // If the error wasn't handled quit
-                    if (error != MySqlErrorCode.None)
+                    if (error != 0)
                     {
                         FEL_LOG_ERROR("sql.driver", "Database {0} NOT opened. There were errors opening the MySQL connections. Check your SQLDriverLogFile ", name);
                         return false;

@@ -28,7 +28,7 @@ namespace Server.Database.Updater
         LOCATION_DOWNLOAD
     }
     public static class DBUpdater<T, Statements>
-        where T : MySqlConnectionProxy<Statements>
+        where T : MySqlConnection<Statements>
         where Statements : unmanaged, Enum
     {
         private static string _dbTypeName = typeof(T).Name;
@@ -150,7 +150,7 @@ namespace Server.Database.Updater
             try
             {
                 DBUpdater<T, Statements>.ApplyFile(pool, connectionInfo.Host, connectionInfo.User, connectionInfo.Password,
-                    connectionInfo.Port, "", temp);
+                    connectionInfo.PortOrSocket, "", temp);
             }
             catch (UpdateException)
             {
@@ -216,7 +216,7 @@ namespace Server.Database.Updater
                 var result = Retrieve(pool, "SHOW TABLES");
                 using (result)
                 {
-                    if (result != null)
+                    if (result != null && result.GetRowCount() > 0)
                         return true;
                 }
             }
@@ -290,7 +290,7 @@ namespace Server.Database.Updater
             }
 
             ApplyFile(pool, connectionInfo.Host, connectionInfo.User, connectionInfo.Password,
-                connectionInfo.Port, connectionInfo.Database, path);
+                connectionInfo.PortOrSocket, connectionInfo.Database, path);
         }
 
         static void ApplyFile(DatabaseWorkerPool<T, Statements> pool, string host, string user, string password, string port_or_socket, string databaseName, string path)
