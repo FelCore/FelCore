@@ -4,6 +4,7 @@
 
 using System;
 using System.Text;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using MySqlSharp;
 using Common;
@@ -147,12 +148,21 @@ namespace Server.Database
             return default;
         }
 
+        static Dictionary<Type, bool> _unsignedTypes = new();
+
         static bool IsUnsigned<T>() where T : unmanaged
         {
-            var fieldInfo = typeof(T).GetField("MinValue");
-            if (fieldInfo == null) return false;
+            bool unsigned;
+            if (!_unsignedTypes.TryGetValue(typeof(T), out unsigned))
+            {
+                var fieldInfo = typeof(T).GetField("MinValue");
+                if (fieldInfo == null)
+                    unsigned = _unsignedTypes[typeof(T)] = false;
+                else
+                    unsigned = _unsignedTypes[typeof(T)] = !Convert.ToBoolean(fieldInfo.GetValue(null));
+            }
 
-            return !Convert.ToBoolean(fieldInfo.GetValue(null));
+            return unsigned;
         }
 
         protected void SetParameterNull(byte index)
