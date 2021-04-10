@@ -82,6 +82,7 @@ namespace Server.Shared
                     _builds.Add(build);
 
                 } while (result.NextRow());
+                result.Dispose();
             }
         }
         public void Initialize(int updateInterval)
@@ -217,6 +218,7 @@ namespace Server.Shared
                     }
                 }
                 while (result.NextRow());
+                result.Dispose();
             }
 
             foreach (var item in existingRealms)

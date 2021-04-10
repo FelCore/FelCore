@@ -238,6 +238,7 @@ namespace Server.AuthServer
                         banned = true;
 
                 } while (result.NextRow());
+                result.Dispose();
 
                 if (banned)
                 {
@@ -382,6 +383,7 @@ namespace Server.AuthServer
                 {
                     pkt.Append((byte)WOW_FAIL_LOCKED_ENFORCED);
                     SendPacket(pkt);
+                    result.Dispose();
                     return;
                 }
             }
@@ -397,6 +399,7 @@ namespace Server.AuthServer
                     {
                         pkt.Append((byte)WOW_FAIL_UNLOCKABLE_LOCK);
                         SendPacket(pkt);
+                        result.Dispose();
                         return;
                     }
                 }
@@ -410,6 +413,7 @@ namespace Server.AuthServer
                     pkt.Append((byte)WOW_FAIL_BANNED);
                     SendPacket(pkt);
                     FEL_LOG_DEBUG("server.authserver", "'{0}:{1}' [AuthChallenge] Banned account {2} tried to login!", ipAddress, port, _accountInfo.Login);
+                    result.Dispose();
                     return;
                 }
                 else
@@ -417,6 +421,7 @@ namespace Server.AuthServer
                     pkt.Append((byte)WOW_FAIL_SUSPENDED);
                     SendPacket(pkt);
                     FEL_LOG_DEBUG("server.authserver", "'{0}:{1}' [AuthChallenge] Temporarily banned account {2} tried to login!", ipAddress, port, _accountInfo.Login);
+                    result.Dispose();
                     return;
                 }
             }
@@ -428,6 +433,7 @@ namespace Server.AuthServer
                 securityFlags = 4;
 
             _srp6 = new SRP6(_accountInfo.Login, fields[10].GetBinary(32), fields[11].GetBinary(32), _sha1);
+            result.Dispose();
 
             // Fill the response packet with the result
             if (AuthHelper.IsAcceptedClientBuild(_build))
@@ -694,6 +700,7 @@ namespace Server.AuthServer
 
             _accountInfo.LoadResult(fields);
             _sessionKey = fields[9].GetBinary(SRP6.SESSION_KEY_LENGTH);
+            result.Dispose();
 
             _reconnectProof = new byte[16];
 
@@ -787,6 +794,7 @@ namespace Server.AuthServer
                     var fields = result.Fetch();
                     characterCounts[fields[0].GetInt32()] = fields[1].GetUInt8();
                 } while (result.NextRow());
+                result.Dispose();
             }
 
             // Circle through realms in the RealmList and construct the return packet (including # of user characters in each realm)
