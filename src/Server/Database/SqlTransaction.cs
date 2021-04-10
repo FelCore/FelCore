@@ -5,12 +5,13 @@
 using System.Collections.Generic;
 using System;
 using System.Threading;
-using MySqlConnector;
 using Common;
 using static Common.Log;
 using static Common.Errors;
 using static Common.Util;
+using static Common.Time;
 using static Server.Database.SqlElementDataType;
+using static MySqlSharp.ErrorServer;
 
 namespace Server.Database
 {
@@ -35,6 +36,12 @@ namespace Server.Database
             if (_cleanedUp)
                 return;
 
+            foreach (var data in _queries)
+            {
+                if (data.Type == SQL_ELEMENT_PREPARED)
+                    data.Element.Stmt?.Dispose();
+            }
+
             _queries.Clear();
             _cleanedUp = true;
         }
@@ -56,7 +63,7 @@ namespace Server.Database
         }
     }
 
-    public class SqlTransaction<T> : SqlTransactionBase where T : MySqlConnectionProxyBase
+    public class SqlTransaction<T> : SqlTransactionBase where T : MySqlConnection
     {
         public void Append(PreparedStatement<T> statement)
         {
@@ -75,20 +82,19 @@ namespace Server.Database
 
         protected new virtual bool Execute()
         {
-            MySqlErrorCode errorCode = TryExecute();
-            if (errorCode == MySqlErrorCode.None)
+            var errorCode = TryExecute();
+            if (errorCode == 0)
                 return true;
 
-            if (errorCode == MySqlErrorCode.LockDeadlock)
+            if (errorCode == (int)ER_LOCK_DEADLOCK)
             {
                 // Make sure only 1 async thread retries a transaction so they don't keep dead-locking each other
                 lock (_deadlockLock)
                 {
                     // Handle MySQL Errno 1213 without extending deadlock to the core itself
-                    var startTime = Time.Now;
-                    for (int loopDuration = 0; loopDuration <= DEADLOCK_MAX_RETRY_TIME_MS; loopDuration = (int)(Time.Now - startTime).TotalMilliseconds)
+                    for (long loopDuration = 0, startMSTime = GetMSTime(); loopDuration <= DEADLOCK_MAX_RETRY_TIME_MS; loopDuration = GetMSTimeDiffToNow(startMSTime))
                     {
-                        if (TryExecute() == MySqlErrorCode.None)
+                        if (TryExecute() == 0)
                             return true;
 
                         FEL_LOG_WARN("sql.sql", "Deadlocked SQL Transaction, retrying. Loop timer: {0} ms, Thread Id: {1}", loopDuration, Thread.CurrentThread.ManagedThreadId);
@@ -104,15 +110,9 @@ namespace Server.Database
             return false;
         }
 
-        public MySqlErrorCode TryExecute()
+        public int TryExecute()
         {
-            if (Conn == null)
-            {
-                Assert(false);    
-                return MySqlErrorCode.None;
-            }
-
-            return Conn.ExecuteTransaction(_trans);
+            return Conn!.ExecuteTransaction(_trans);
         }
 
         public void CleanUpOnFailure()
@@ -130,23 +130,22 @@ namespace Server.Database
 
         protected override bool Execute()
         {
-            MySqlErrorCode errorCode = TryExecute();
-            if (errorCode == MySqlErrorCode.None)
+            var errorCode = TryExecute();
+            if (errorCode == 0)
             {
                 _result.SetResult(true);
                 return true;
             }
 
-            if (errorCode == MySqlErrorCode.LockDeadlock)
+            if (errorCode == (int)ER_LOCK_DEADLOCK)
             {
                 // Make sure only 1 async thread retries a transaction so they don't keep dead-locking each other
                 lock (_deadlockLock)
                 {
                     // Handle MySQL Errno 1213 without extending deadlock to the core itself
-                    var startTime = Time.Now;
-                    for (int loopDuration = 0; loopDuration <= DEADLOCK_MAX_RETRY_TIME_MS; loopDuration = (int)(Time.Now - startTime).TotalMilliseconds)
+                    for (long loopDuration = 0, startMSTime = GetMSTime(); loopDuration <= DEADLOCK_MAX_RETRY_TIME_MS; loopDuration = GetMSTimeDiffToNow(startMSTime))
                     {
-                        if (TryExecute() == MySqlErrorCode.None)
+                        if (TryExecute() == 0)
                         {
                             _result.SetResult(true);
                             return true;

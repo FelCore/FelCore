@@ -65,23 +65,24 @@ namespace Server.Shared
                     var fields = result.Fetch();
                     var build = new RealmBuildInfo();
 
-                    build.MajorVersion = fields.GetUInt32(0);
-                    build.MinorVersion = fields.GetUInt32(1);
-                    build.BugfixVersion = fields.GetUInt32(2);
-                    build.HotfixVersion = fields.GetString(3);
+                    build.MajorVersion = fields[0].GetUInt32();
+                    build.MinorVersion = fields[1].GetUInt32();
+                    build.BugfixVersion = fields[2].GetUInt32();
+                    build.HotfixVersion = fields[3].GetString();
 
-                    build.Build = fields.GetUInt32(4);
-                    var windowsHash = fields.GetString(5);
+                    build.Build = fields[4].GetUInt32();
+                    var windowsHash = fields[5].GetString();
                     if (windowsHash.Length == RealmBuildInfo.HashSize * 2)
                         build.WindowsHash = HexStrToByteArray(windowsHash);
 
-                    var macHash = fields.GetString(6);
+                    var macHash = fields[6].GetString();
                     if (macHash.Length == RealmBuildInfo.HashSize * 2)
                         build.MacHash = HexStrToByteArray(macHash);
 
                     _builds.Add(build);
 
                 } while (result.NextRow());
+                result.Dispose();
             }
         }
         public void Initialize(int updateInterval)
@@ -158,11 +159,11 @@ namespace Server.Shared
                     try
                     {
                         var fields = result.Fetch();
-                        int realmId = fields.GetInt32(0);
-                        string name = fields.GetString(1);
-                        string externalAddressString = fields.GetString(2);
-                        string localAddressString = fields.GetString(3);
-                        string localSubmaskString = fields.GetString(4);
+                        int realmId = fields[0].GetInt32();
+                        string name = fields[1].GetString();
+                        string externalAddressString = fields[2].GetString();
+                        string localAddressString = fields[3].GetString();
+                        string localSubmaskString = fields[4].GetString();
 
                         var externalAddress = Util.ResolveIPAddress(externalAddressString);
                         if (externalAddress == null)
@@ -186,17 +187,17 @@ namespace Server.Shared
                             continue;
                         }
 
-                        ushort port = fields.GetUInt16(5);
-                        byte icon = fields.GetByte(6);
+                        ushort port = fields[5].GetUInt16();
+                        byte icon = fields[6].GetUInt8();
                         if (icon == (byte)REALM_TYPE_FFA_PVP)
                             icon = (byte)REALM_TYPE_PVP;
                         if (icon >= (byte)MAX_CLIENT_REALM_TYPE)
                             icon = (byte)REALM_TYPE_NORMAL;
-                        RealmFlags flag = (RealmFlags)(fields.GetByte(7));
-                        byte timezone = fields.GetByte(8);
-                        byte allowedSecurityLevel = fields.GetByte(9);
-                        float pop = fields.GetFloat(10);
-                        uint build = fields.GetUInt32(11);
+                        RealmFlags flag = (RealmFlags)(fields[7].GetUInt8());
+                        byte timezone = fields[8].GetUInt8();
+                        byte allowedSecurityLevel = fields[9].GetUInt8();
+                        float pop = fields[10].GetFloat();
+                        uint build = fields[11].GetUInt32();
 
                         RealmHandle id = new RealmHandle(realmId);
 
@@ -217,6 +218,7 @@ namespace Server.Shared
                     }
                 }
                 while (result.NextRow());
+                result.Dispose();
             }
 
             foreach (var item in existingRealms)

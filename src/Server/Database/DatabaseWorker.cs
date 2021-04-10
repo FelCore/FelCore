@@ -13,14 +13,14 @@ namespace Server.Database
         Thread _workerThread;
         InterlockedBoolean _cancelationToken;
         ProducerConsumerQueue<SqlOperation> _queue;
-        MySqlConnectionProxyBase _connectionProxy;
+        MySqlConnection _connection;
 
         private bool _disposed;
 
-        public DatabaseWorker(ProducerConsumerQueue<SqlOperation> newQueue, MySqlConnectionProxyBase connectionProxy)
+        public DatabaseWorker(ProducerConsumerQueue<SqlOperation> newQueue, MySqlConnection connection)
         {
             _queue = newQueue;
-            _connectionProxy = connectionProxy;
+            _connection = connection;
 
             _workerThread = new Thread(WorkerThread) { Name = "DB Worker Thread", IsBackground = true };
             _workerThread.Start();
@@ -40,7 +40,7 @@ namespace Server.Database
                 if (_cancelationToken || operation == null)
                     return;
 
-                operation.SetConnection(_connectionProxy);
+                operation.SetConnection(_connection);
                 operation.Call();
             }
         }

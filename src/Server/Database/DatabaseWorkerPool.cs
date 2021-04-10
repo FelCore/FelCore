@@ -5,11 +5,13 @@
 using System;
 using System.Threading;
 using System.Collections.Generic;
-using MySqlConnector;
+using MySqlSharp;
 using Common;
 using Common.Extensions;
 using static Common.Log;
 using static Common.Errors;
+using static MySqlSharp.NativeMethods;
+using static MySqlSharp.ErrorServer;
 
 namespace Server.Database
 {
@@ -36,16 +38,19 @@ namespace Server.Database
     }
 
     public class DatabaseWorkerPool<T, Statements>
-        where T : MySqlConnectionProxy<Statements>
+        where T : MySqlConnection<Statements>
         where Statements : unmanaged, Enum
     {
+        public const uint MIN_MYSQL_SERVER_VERSION = 50100u;
+        public const uint MIN_MYSQL_CLIENT_VERSION = 50100u;
+
         ProducerConsumerQueue<SqlOperation> _queue;
 
         List<T>[] _connections = new List<T>[(int)IDX_SIZE];
 
         MySqlConnectionInfo? _connectionInfo;
 
-        byte[] _preparedStatementSize = new byte[0];
+        byte[] _preparedStatementSize = Array.Empty<byte>();
 
         byte _async_threads, _synch_threads;
 
@@ -55,6 +60,8 @@ namespace Server.Database
 
         public DatabaseWorkerPool()
         {
+            Assert(mysql_thread_safe(), "Used MySQL library isn't thread-safe.");
+            Assert(mysql_get_client_version() >= MIN_MYSQL_CLIENT_VERSION, "FelCore does not support MySQL versions below 5.1");
             _connections[0] = new List<T>();
             _connections[1] = new List<T>();
 
@@ -157,7 +164,7 @@ namespace Server.Database
 
             var result = connection.Query(sql);
             connection.Unlock();
-            if (result == null || !result.NextRow())
+            if (result == null || result.GetRowCount() == 0 || !result.NextRow())
             {
                 if (result != null)
                     result.Dispose();
@@ -188,6 +195,15 @@ namespace Server.Database
             var connection = GetFreeConnection();
             var ret = connection.Query(stmt);
             connection.Unlock();
+
+            //! Delete proxy-class. Not needed anymore
+            stmt.Dispose();
+
+            if (ret == null || ret.GetRowCount() == 0)
+            {
+                ret?.Dispose();;
+                return null;
+            }
 
             return ret;
         }
@@ -302,7 +318,7 @@ namespace Server.Database
         {
             var connection = GetFreeConnection();
             var errorCode = connection.ExecuteTransaction(transaction);
-            if (errorCode == MySqlErrorCode.None)
+            if (errorCode == 0)
             {
                 connection.Unlock(); // OK, operation succesful
                 return;
@@ -310,13 +326,13 @@ namespace Server.Database
 
             // Handle MySQL Errno 1213 without extending deadlock to the core itself
             // @todo More elegant way
-            if (errorCode == MySqlErrorCode.LockDeadlock)
+            if (errorCode == (int)ER_LOCK_DEADLOCK)
             {
                 //todo: handle multiple sync threads deadlocking in a similar way as async threads
                 byte loopBreaker = 5;
                 for (byte i = 0; i < loopBreaker; ++i)
                 {
-                    if (connection.ExecuteTransaction(transaction) == MySqlErrorCode.None)
+                    if (connection.ExecuteTransaction(transaction) == 0)
                         break;
                 }
             }
@@ -351,7 +367,7 @@ namespace Server.Database
                 trans.Append(stmt);
         }
 
-        private MySqlErrorCode OpenConnections(InternalIndex type, byte numConnections)
+        private int OpenConnections(InternalIndex type, byte numConnections)
         {
             if (_connectionInfo == null)
             {
@@ -378,14 +394,8 @@ namespace Server.Database
                     return null;
                 })();
 
-                if (connection == null)
-                {
-                    Environment.FailFast($"Consturct instance of type {typeof(T).Name} failed!");
-                    return 0;
-                }
-
-                var error = connection.Open();
-                if (error != MySqlErrorCode.None)
+                var error = connection!.Open();
+                if (error != 0)
                 {
                     // Failed to open a connection or invalid version, abort and cleanup
                     foreach (var item in _connections[(int)type])
@@ -397,6 +407,11 @@ namespace Server.Database
                         _queue = new ProducerConsumerQueue<SqlOperation>();
 
                     return error;
+                }
+                else if (connection.GetServerVersion() < MIN_MYSQL_SERVER_VERSION)
+                {
+                    FEL_LOG_ERROR("sql.driver", "FelCore does not support MySQL versions below 5.1");
+                    return 1;
                 }
                 else
                 {
@@ -439,7 +454,7 @@ namespace Server.Database
             return connection;
         }
 
-        public MySqlErrorCode Open()
+        public int Open()
         {
             if (_connectionInfo == null)
             {
@@ -520,7 +535,7 @@ namespace Server.Database
                     else
                         connection.Unlock();
 
-                    var preparedSize = connection.PreparedStatementQueries.Length;
+                    var preparedSize = connection.Stmts.Length;
                     if (_preparedStatementSize.Length < preparedSize)
                         Array.Resize(ref _preparedStatementSize, preparedSize);
 
@@ -531,7 +546,7 @@ namespace Server.Database
                         if (_preparedStatementSize[i] > 0)
                             continue;
 
-                        var stmt = connection.PreparedStatementQueries[i];
+                        var stmt = connection.Stmts[i];
                         if (stmt is not null)
                         {
                             var paramCount = stmt.ParameterCount;
