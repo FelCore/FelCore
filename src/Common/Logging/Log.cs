@@ -451,51 +451,402 @@ namespace Common
             Write(ref msg);
         }
 
-        public static void FEL_LOG_TRACE(string filter, string format, params object?[] args)
+        public static void FEL_LOG_TRACE(string filter, string message)
         {
 #if !PERFORMANCE_PROFILING
             if (sLog.ShouldLog(filter, LOG_LEVEL_TRACE))
-                sLog.outMessage(filter, LOG_LEVEL_TRACE, format, args);
+                sLog.outMessage(filter, LOG_LEVEL_TRACE, message);
+#endif
+        }
+        public static void FEL_LOG_TRACE<Arg1>(string filter, string message, Arg1 arg1)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_TRACE))
+                sLog.outMessage(filter, LOG_LEVEL_TRACE, message, arg1);
+#endif
+        }
+        public static void FEL_LOG_TRACE<Arg1,Arg2>(string filter, string message, Arg1 arg1, Arg2 arg2)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_TRACE))
+                sLog.outMessage(filter, LOG_LEVEL_TRACE, message, arg1, arg2);
+#endif
+        }
+        public static void FEL_LOG_TRACE<Arg1,Arg2,Arg3>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_TRACE))
+                sLog.outMessage(filter, LOG_LEVEL_TRACE, message, arg1, arg2, arg3);
+#endif
+        }
+        public static void FEL_LOG_TRACE<Arg1,Arg2,Arg3,Arg4>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_TRACE))
+                sLog.outMessage(filter, LOG_LEVEL_TRACE, message, arg1, arg2, arg3, arg4);
+#endif
+        }
+        public static void FEL_LOG_TRACE<Arg1,Arg2,Arg3,Arg4,Arg5>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_TRACE))
+                sLog.outMessage(filter, LOG_LEVEL_TRACE, message, arg1, arg2, arg3, arg4, arg5);
+#endif
+        }
+        public static void FEL_LOG_TRACE<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_TRACE))
+                sLog.outMessage(filter, LOG_LEVEL_TRACE, message, arg1, arg2, arg3, arg4, arg5, arg6);
+#endif
+        }
+        public static void FEL_LOG_TRACE<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_TRACE))
+                sLog.outMessage(filter, LOG_LEVEL_TRACE, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+#endif
+        }
+        public static void FEL_LOG_TRACE<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_TRACE))
+                sLog.outMessage(filter, LOG_LEVEL_TRACE, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 #endif
         }
 
-        public static void FEL_LOG_DEBUG(string filter, string format, params object?[] args)
+
+
+
+        public static void FEL_LOG_DEBUG(string filter, string message)
         {
 #if !PERFORMANCE_PROFILING
             if (sLog.ShouldLog(filter, LOG_LEVEL_DEBUG))
-                sLog.outMessage(filter, LOG_LEVEL_DEBUG, format, args);
+                sLog.outMessage(filter, LOG_LEVEL_DEBUG, message);
+#endif
+        }
+        public static void FEL_LOG_DEBUG<Arg1>(string filter, string message, Arg1 arg1)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_DEBUG))
+                sLog.outMessage(filter, LOG_LEVEL_DEBUG, message, arg1);
+#endif
+        }
+        public static void FEL_LOG_DEBUG<Arg1,Arg2>(string filter, string message, Arg1 arg1, Arg2 arg2)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_DEBUG))
+                sLog.outMessage(filter, LOG_LEVEL_DEBUG, message, arg1, arg2);
+#endif
+        }
+        public static void FEL_LOG_DEBUG<Arg1,Arg2,Arg3>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_DEBUG))
+                sLog.outMessage(filter, LOG_LEVEL_DEBUG, message, arg1, arg2, arg3);
+#endif
+        }
+        public static void FEL_LOG_DEBUG<Arg1,Arg2,Arg3,Arg4>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_DEBUG))
+                sLog.outMessage(filter, LOG_LEVEL_DEBUG, message, arg1, arg2, arg3, arg4);
+#endif
+        }
+        public static void FEL_LOG_DEBUG<Arg1,Arg2,Arg3,Arg4,Arg5>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_DEBUG))
+                sLog.outMessage(filter, LOG_LEVEL_DEBUG, message, arg1, arg2, arg3, arg4, arg5);
+#endif
+        }
+        public static void FEL_LOG_DEBUG<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_DEBUG))
+                sLog.outMessage(filter, LOG_LEVEL_DEBUG, message, arg1, arg2, arg3, arg4, arg5, arg6);
+#endif
+        }
+        public static void FEL_LOG_DEBUG<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_DEBUG))
+                sLog.outMessage(filter, LOG_LEVEL_DEBUG, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+#endif
+        }
+        public static void FEL_LOG_DEBUG<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_DEBUG))
+                sLog.outMessage(filter, LOG_LEVEL_DEBUG, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 #endif
         }
 
-        public static void FEL_LOG_INFO(string filter, string format, params object?[] args)
+
+
+
+        public static void FEL_LOG_INFO(string filter, string message)
         {
 #if !PERFORMANCE_PROFILING
             if (sLog.ShouldLog(filter, LOG_LEVEL_INFO))
-                sLog.outMessage(filter, LOG_LEVEL_INFO, format, args);
+                sLog.outMessage(filter, LOG_LEVEL_INFO, message);
+#endif
+        }
+        public static void FEL_LOG_INFO<Arg1>(string filter, string message, Arg1 arg1)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_INFO))
+                sLog.outMessage(filter, LOG_LEVEL_INFO, message, arg1);
+#endif
+        }
+        public static void FEL_LOG_INFO<Arg1,Arg2>(string filter, string message, Arg1 arg1, Arg2 arg2)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_INFO))
+                sLog.outMessage(filter, LOG_LEVEL_INFO, message, arg1, arg2);
+#endif
+        }
+        public static void FEL_LOG_INFO<Arg1,Arg2,Arg3>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_INFO))
+                sLog.outMessage(filter, LOG_LEVEL_INFO, message, arg1, arg2, arg3);
+#endif
+        }
+        public static void FEL_LOG_INFO<Arg1,Arg2,Arg3,Arg4>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_INFO))
+                sLog.outMessage(filter, LOG_LEVEL_INFO, message, arg1, arg2, arg3, arg4);
+#endif
+        }
+        public static void FEL_LOG_INFO<Arg1,Arg2,Arg3,Arg4,Arg5>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_INFO))
+                sLog.outMessage(filter, LOG_LEVEL_INFO, message, arg1, arg2, arg3, arg4, arg5);
+#endif
+        }
+        public static void FEL_LOG_INFO<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_INFO))
+                sLog.outMessage(filter, LOG_LEVEL_INFO, message, arg1, arg2, arg3, arg4, arg5, arg6);
+#endif
+        }
+        public static void FEL_LOG_INFO<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_INFO))
+                sLog.outMessage(filter, LOG_LEVEL_INFO, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+#endif
+        }
+        public static void FEL_LOG_INFO<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_INFO))
+                sLog.outMessage(filter, LOG_LEVEL_INFO, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 #endif
         }
 
-        public static void FEL_LOG_WARN(string filter, string format, params object?[] args)
+
+
+
+        public static void FEL_LOG_WARN(string filter, string message)
         {
 #if !PERFORMANCE_PROFILING
             if (sLog.ShouldLog(filter, LOG_LEVEL_WARN))
-                sLog.outMessage(filter, LOG_LEVEL_WARN, format, args);
+                sLog.outMessage(filter, LOG_LEVEL_WARN, message);
+#endif
+        }
+        public static void FEL_LOG_WARN<Arg1>(string filter, string message, Arg1 arg1)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_WARN))
+                sLog.outMessage(filter, LOG_LEVEL_WARN, message, arg1);
+#endif
+        }
+        public static void FEL_LOG_WARN<Arg1,Arg2>(string filter, string message, Arg1 arg1, Arg2 arg2)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_WARN))
+                sLog.outMessage(filter, LOG_LEVEL_WARN, message, arg1, arg2);
+#endif
+        }
+        public static void FEL_LOG_WARN<Arg1,Arg2,Arg3>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_WARN))
+                sLog.outMessage(filter, LOG_LEVEL_WARN, message, arg1, arg2, arg3);
+#endif
+        }
+        public static void FEL_LOG_WARN<Arg1,Arg2,Arg3,Arg4>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_WARN))
+                sLog.outMessage(filter, LOG_LEVEL_WARN, message, arg1, arg2, arg3, arg4);
+#endif
+        }
+        public static void FEL_LOG_WARN<Arg1,Arg2,Arg3,Arg4,Arg5>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_WARN))
+                sLog.outMessage(filter, LOG_LEVEL_WARN, message, arg1, arg2, arg3, arg4, arg5);
+#endif
+        }
+        public static void FEL_LOG_WARN<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_WARN))
+                sLog.outMessage(filter, LOG_LEVEL_WARN, message, arg1, arg2, arg3, arg4, arg5, arg6);
+#endif
+        }
+        public static void FEL_LOG_WARN<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_WARN))
+                sLog.outMessage(filter, LOG_LEVEL_WARN, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+#endif
+        }
+        public static void FEL_LOG_WARN<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_WARN))
+                sLog.outMessage(filter, LOG_LEVEL_WARN, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 #endif
         }
 
-        public static void FEL_LOG_ERROR(string filter, string format, params object?[] args)
+
+
+
+        public static void FEL_LOG_ERROR(string filter, string message)
         {
 #if !PERFORMANCE_PROFILING
             if (sLog.ShouldLog(filter, LOG_LEVEL_ERROR))
-                sLog.outMessage(filter, LOG_LEVEL_ERROR, format, args);
+                sLog.outMessage(filter, LOG_LEVEL_ERROR, message);
+#endif
+        }
+        public static void FEL_LOG_ERROR<Arg1>(string filter, string message, Arg1 arg1)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_ERROR))
+                sLog.outMessage(filter, LOG_LEVEL_ERROR, message, arg1);
+#endif
+        }
+        public static void FEL_LOG_ERROR<Arg1,Arg2>(string filter, string message, Arg1 arg1, Arg2 arg2)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_ERROR))
+                sLog.outMessage(filter, LOG_LEVEL_ERROR, message, arg1, arg2);
+#endif
+        }
+        public static void FEL_LOG_ERROR<Arg1,Arg2,Arg3>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_ERROR))
+                sLog.outMessage(filter, LOG_LEVEL_ERROR, message, arg1, arg2, arg3);
+#endif
+        }
+        public static void FEL_LOG_ERROR<Arg1,Arg2,Arg3,Arg4>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_ERROR))
+                sLog.outMessage(filter, LOG_LEVEL_ERROR, message, arg1, arg2, arg3, arg4);
+#endif
+        }
+        public static void FEL_LOG_ERROR<Arg1,Arg2,Arg3,Arg4,Arg5>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_ERROR))
+                sLog.outMessage(filter, LOG_LEVEL_ERROR, message, arg1, arg2, arg3, arg4, arg5);
+#endif
+        }
+        public static void FEL_LOG_ERROR<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_ERROR))
+                sLog.outMessage(filter, LOG_LEVEL_ERROR, message, arg1, arg2, arg3, arg4, arg5, arg6);
+#endif
+        }
+        public static void FEL_LOG_ERROR<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_ERROR))
+                sLog.outMessage(filter, LOG_LEVEL_ERROR, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+#endif
+        }
+        public static void FEL_LOG_ERROR<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_ERROR))
+                sLog.outMessage(filter, LOG_LEVEL_ERROR, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 #endif
         }
 
-        public static void FEL_LOG_FATAL(string filter, string format, params object?[] args)
+
+
+
+        public static void FEL_LOG_FATAL(string filter, string message)
         {
 #if !PERFORMANCE_PROFILING
             if (sLog.ShouldLog(filter, LOG_LEVEL_FATAL))
-                sLog.outMessage(filter, LOG_LEVEL_FATAL, format, args);
+                sLog.outMessage(filter, LOG_LEVEL_FATAL, message);
+#endif
+        }
+        public static void FEL_LOG_FATAL<Arg1>(string filter, string message, Arg1 arg1)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_FATAL))
+                sLog.outMessage(filter, LOG_LEVEL_FATAL, message, arg1);
+#endif
+        }
+        public static void FEL_LOG_FATAL<Arg1,Arg2>(string filter, string message, Arg1 arg1, Arg2 arg2)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_FATAL))
+                sLog.outMessage(filter, LOG_LEVEL_FATAL, message, arg1, arg2);
+#endif
+        }
+        public static void FEL_LOG_FATAL<Arg1,Arg2,Arg3>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_FATAL))
+                sLog.outMessage(filter, LOG_LEVEL_FATAL, message, arg1, arg2, arg3);
+#endif
+        }
+        public static void FEL_LOG_FATAL<Arg1,Arg2,Arg3,Arg4>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_FATAL))
+                sLog.outMessage(filter, LOG_LEVEL_FATAL, message, arg1, arg2, arg3, arg4);
+#endif
+        }
+        public static void FEL_LOG_FATAL<Arg1,Arg2,Arg3,Arg4,Arg5>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_FATAL))
+                sLog.outMessage(filter, LOG_LEVEL_FATAL, message, arg1, arg2, arg3, arg4, arg5);
+#endif
+        }
+        public static void FEL_LOG_FATAL<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_FATAL))
+                sLog.outMessage(filter, LOG_LEVEL_FATAL, message, arg1, arg2, arg3, arg4, arg5, arg6);
+#endif
+        }
+        public static void FEL_LOG_FATAL<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_FATAL))
+                sLog.outMessage(filter, LOG_LEVEL_FATAL, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+#endif
+        }
+        public static void FEL_LOG_FATAL<Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8>(string filter, string message, Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4, Arg5 arg5, Arg6 arg6, Arg7 arg7, Arg8 arg8)
+        {
+#if !PERFORMANCE_PROFILING
+            if (sLog.ShouldLog(filter, LOG_LEVEL_FATAL))
+                sLog.outMessage(filter, LOG_LEVEL_FATAL, message, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 #endif
         }
     }
