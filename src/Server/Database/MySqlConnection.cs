@@ -221,8 +221,8 @@ namespace Server.Database
 
         protected MySqlPreparedStatement? GetPreparedStatement(int index)
         {
-            Assert(index < _stmts.Length, string.Format("Tried to access invalid prepared statement index {0} (max index {1}) on database `{2}`, connection type: {3}",
-                index, _stmts.Length, _connectionInfo.Database, (_connectionFlags & CONNECTION_ASYNC) != 0 ? "asynchronous" : "synchronous"));
+            Assert(index < _stmts.Length, "Tried to access invalid prepared statement index {0} (max index {1}) on database `{2}`, connection type: {3}",
+                index, _stmts.Length, _connectionInfo.Database, (_connectionFlags & CONNECTION_ASYNC) != 0 ? "asynchronous" : "synchronous");
 
             var ret = _stmts[index];
             if (ret == null)

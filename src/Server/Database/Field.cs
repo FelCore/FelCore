@@ -220,8 +220,8 @@ namespace Server.Database
 
         public byte[] GetBinary(int length)
         {
-            Assert(_data.Value != default && (_data.Length == length), string.Format("Expected {0}-byte binary blob, "+
-                "got {1}data ({2} bytes) instead", length, _data.Value != default ? "" : "no ", _data.Length));
+            Assert(_data.Value != default && (_data.Length == length), "Expected {0}-byte binary blob, "+
+                "got {1}data ({2} bytes) instead", length, _data.Value != default ? "" : "no ", _data.Length);
 
             var ret = new byte[_data.Length];
             _data.Span.CopyTo(ret);
@@ -230,8 +230,8 @@ namespace Server.Database
 
         public void GetBinary(Span<byte> destination, int length)
         {
-            Assert(_data.Value != default && (_data.Length == length), string.Format("Expected {0}-byte binary blob, "+
-                "got {1}data ({2} bytes) instead", length, _data.Value != default ? "" : "no ", _data.Length));
+            Assert(_data.Value != default && (_data.Length == length), "Expected {0}-byte binary blob, "+
+                "got {1}data ({2} bytes) instead", length, _data.Value != default ? "" : "no ", _data.Length);
 
             _data.Span.CopyTo(destination);
         }

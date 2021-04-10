@@ -34,7 +34,7 @@ namespace Server.Database
         public PreparedQueryResult? GetPreparedResult(int index)
         {
             // Don't call to this function if the index is of a prepared statement
-            Assert(index < _queries.Length, string.Format("Query holder result index out of range, tried to access index {0} but there are only {1} results", index, _queries.Length));
+            Assert(index < _queries.Length, "Query holder result index out of range, tried to access index {0} but there are only {1} results", index, _queries.Length);
 
             return _queries[index].Item2;
         }

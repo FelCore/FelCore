@@ -144,7 +144,7 @@ namespace Server.Database
             if (typeof(T) == typeof(decimal))
                 return MYSQL_TYPE_DECIMAL;
 
-            Assert(false, string.Format("Invalid type to field type: {0}", typeof(T).Name));
+            Assert(false, "Invalid type to field type: {0}", typeof(T).Name);
             return default;
         }
 

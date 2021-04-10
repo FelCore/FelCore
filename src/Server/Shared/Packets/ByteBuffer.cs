@@ -191,7 +191,7 @@ namespace Server.Shared
 
         private void EnsureFreeSpace(int addSize)
         {
-            Assert(addSize > 0, string.Format("Attempted to put a zero-sized value in ByteBuffer (pos: {0} size: {1})", _wpos, Size()));
+            Assert(addSize > 0, "Attempted to put a zero-sized value in ByteBuffer (pos: {0} size: {1})", _wpos, Size());
             Assert(Size() < 10000000);
 
             int newSize = _wpos + addSize;
@@ -252,16 +252,16 @@ namespace Server.Shared
 
         public void Put(int pos, ReadOnlySpan<byte> src)
         {
-            Assert(pos >= 0, string.Format("Attempted to put value with invalid pos: {0} in ByteBuffer", pos));
-            Assert(pos + src.Length <= Size(), string.Format("Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", src.Length, pos, Size()));
+            Assert(pos >= 0, "Attempted to put value with invalid pos: {0} in ByteBuffer", pos);
+            Assert(pos + src.Length <= Size(), "Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", src.Length, pos, Size());
 
             src.CopyTo(_storage.AsSpan(pos));
         }
 
         public void Put<T>(int pos, T value) where T : unmanaged
         {
-            Assert(pos >= 0, string.Format("Attempted to put value with invalid pos: {0} in ByteBuffer", pos));
-            Assert(pos + sizeof(T) <= Size(), string.Format("Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", sizeof(T), pos, Size()));
+            Assert(pos >= 0, "Attempted to put value with invalid pos: {0} in ByteBuffer", pos);
+            Assert(pos + sizeof(T) <= Size(), "Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", sizeof(T), pos, Size());
 
             MemoryMarshal.Write<T>(_storage.AsSpan(pos), ref value);
         }
@@ -275,7 +275,7 @@ namespace Server.Shared
 
         public ref T Read<T>(int pos) where T : unmanaged
         {
-            Assert(pos >= 0, string.Format("Attempted to read value with invalid pos: {0} in ByteBuffer", pos));
+            Assert(pos >= 0, "Attempted to read value with invalid pos: {0} in ByteBuffer", pos);
             if (pos + sizeof(T) > Size())
                 throw new ByteBufferPositionException(false, pos, sizeof(T), Size());
 
