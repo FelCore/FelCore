@@ -318,7 +318,7 @@ namespace Server.Database
                 InitializeDatabaseFieldMetadata(&_fieldMetadata[i], &field[i], i);
 
                 _rBind[i].buffer_type = field[i].type;
-                _rBind[i].buffer_length = new CULong((nuint)size);
+                _rBind[i].buffer_length = new CULong((uint)size);
                 _rBind[i].length = &lengthBuffer[i];
                 _rBind[i].is_null = &isNullBuffer[i];
                 _rBind[i].error = default;

@@ -211,7 +211,7 @@ namespace Server.Database
             AssertValidIndex(index);
             _paramsSet[index] = true;
 
-            var byteCount = new CULong((nuint)Encoding.UTF8.GetByteCount(value));
+            var byteCount = new CULong((uint)Encoding.UTF8.GetByteCount(value));
 
             MYSQL_BIND* bind = &_bind[index];
 
