@@ -193,17 +193,17 @@ namespace Server.Database
 
             MYSQL_BIND* bind = &_bind[index];
 
-            var len = (UIntPtr)sizeof(T);
+            var len = sizeof(T);
             bind->buffer_type = GetFieldType<T>();
             Marshal.FreeHGlobal((IntPtr)bind->buffer);
 
-            bind->buffer = Marshal.AllocHGlobal((int)len).ToPointer();
+            bind->buffer = Marshal.AllocHGlobal(len).ToPointer();
             bind->buffer_length = default;
             bind->is_null_value = false;
             Marshal.FreeHGlobal((IntPtr)bind->length); // bind->length Only != nullptr for strings
             bind->is_unsigned = IsUnsigned<T>();
 
-            MemoryMarshal.Write(new Span<byte>(bind->buffer, (int)len), ref value);
+            MemoryMarshal.Write(new Span<byte>(bind->buffer, len), ref value);
         }
 
         protected void SetParameter(byte index, string value)
@@ -241,7 +241,7 @@ namespace Server.Database
 
             MYSQL_BIND* bind = &_bind[index];
 
-            var len = new CULong((nuint)value.Length);
+            var len = new CULong((uint)value.Length);
             bind->buffer_type = MYSQL_TYPE_BLOB;
             Marshal.FreeHGlobal((IntPtr)bind->buffer);
             bind->buffer = Marshal.AllocHGlobal((int)len.Value).ToPointer();
@@ -249,8 +249,8 @@ namespace Server.Database
             bind->is_null_value = false;
 
             Marshal.FreeHGlobal((IntPtr)bind->length);
-            var lengthMem = Marshal.AllocHGlobal(sizeof(UIntPtr)).ToPointer();
-            MemoryMarshal.Write(new Span<byte>(lengthMem, sizeof(UIntPtr)), ref len);
+            var lengthMem = Marshal.AllocHGlobal(sizeof(CULong)).ToPointer();
+            MemoryMarshal.Write(new Span<byte>(lengthMem, sizeof(CULong)), ref len);
             bind->length = (CULong*)lengthMem;
 
             value.CopyTo(new Span<byte>(bind->buffer, (int)len.Value));

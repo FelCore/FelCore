@@ -289,7 +289,7 @@ namespace Server.Database
 
             new Span<byte>(_rBind, sizeof(MYSQL_BIND) * _fieldCount).Fill(0);
             new Span<byte>(isNullBuffer, sizeof(bool) * _fieldCount).Fill(0);
-            new Span<byte>(lengthBuffer, sizeof(UIntPtr) * _fieldCount).Fill(0);
+            new Span<byte>(lengthBuffer, sizeof(CULong) * _fieldCount).Fill(0);
 
             //- This is where we store the (entire) resultset
             if (mysql_stmt_store_result(_stmt) != 0)
