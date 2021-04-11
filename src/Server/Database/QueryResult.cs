@@ -48,7 +48,7 @@ namespace Server.Database
                 case MYSQL_TYPE_BLOB:
                 case MYSQL_TYPE_STRING:
                 case MYSQL_TYPE_VAR_STRING:
-                    return (int)(field->max_length) + 1;
+                    return (int)(field->max_length).Value + 1;
 
                 case MYSQL_TYPE_DECIMAL:
                 case MYSQL_TYPE_NEWDECIMAL:
@@ -124,7 +124,7 @@ namespace Server.Database
 
     public unsafe class QueryResult : IDisposable
     {
-        MYSQL_RES* _result;
+        IntPtr _result;
         MYSQL_FIELD* _fields;
         QueryResultFieldMetadata* _fieldMetadata;
         long _rowCount;
@@ -136,7 +136,7 @@ namespace Server.Database
 
         private QueryResult() {}
 
-        public QueryResult(MYSQL_RES* result, MYSQL_FIELD* fields, long rowCount, int fieldCount)
+        public QueryResult(IntPtr result, MYSQL_FIELD* fields, long rowCount, int fieldCount)
         {
             _result = result;
             _fields = fields;
@@ -172,16 +172,18 @@ namespace Server.Database
                 return false;
             }
 
-            UIntPtr* lengths = mysql_fetch_lengths(_result);
+            CULong* lengths = mysql_fetch_lengths(_result);
             if (lengths == default)
             {
-                FEL_LOG_WARN("sql.sql", "{0}:mysql_fetch_lengths, cannot retrieve value lengths. Error {1}.", "QueryResult::NextRow()", mysql_error(_result->handle));
+                IntPtr handle = DatabaseLoader.IsMySQL8 ? ((MYSQL_RES*)_result)->handle : ((MYSQL_RES_OLD*)_result)->handle;
+
+                FEL_LOG_WARN("sql.sql", "{0}:mysql_fetch_lengths, cannot retrieve value lengths. Error {1}.", "QueryResult::NextRow()", mysql_error(handle));
                 CleanUp();
                 return false;
             }
 
             for (int i = 0; i < _fieldCount; i++)
-                _currentRow[i].SetStructuredValue((byte*)row[i], (int)lengths[i]);
+                _currentRow[i].SetStructuredValue((byte*)row[i], (int)lengths[i].Value);
 
             return true;
         }
@@ -243,14 +245,14 @@ namespace Server.Database
         long _rowPosition;
         int _fieldCount;
         MYSQL_BIND* _rBind;
-        MYSQL_STMT* _stmt;
-        MYSQL_RES* _metadataResult;    ///< Field metadata, returned by mysql_stmt_result_metadata
+        IntPtr _stmt;
+        IntPtr _metadataResult;    ///< Field metadata, returned by mysql_stmt_result_metadata
 
         private PreparedQueryResult() {}
 
         public const int UNSIGNED_FLAG = 32;    /**< Field is unsigned */
 
-        public PreparedQueryResult(MYSQL_STMT* stmt, MYSQL_RES* result, long rowCount, int fieldCount)
+        public PreparedQueryResult(IntPtr stmt, IntPtr result, long rowCount, int fieldCount)
         {
             _stmt = stmt;
             _rowCount = rowCount;
@@ -260,10 +262,21 @@ namespace Server.Database
             if (_metadataResult == default)
                 return;
 
-            if (_stmt->bind_result_done != 0)
+            if (DatabaseLoader.IsMySQL8)
             {
-                Marshal.FreeHGlobal((IntPtr)stmt->bind->length);
-                Marshal.FreeHGlobal((IntPtr)stmt->bind->is_null);
+                if (((MYSQL_STMT*)_stmt)->bind_result_done != 0)
+                {
+                    Marshal.FreeHGlobal((IntPtr)((MYSQL_STMT*)_stmt)->bind->length);
+                    Marshal.FreeHGlobal((IntPtr)((MYSQL_STMT*)_stmt)->bind->is_null);
+                }
+            }
+            else
+            {
+                if (((MYSQL_STMT_OLD*)_stmt)->bind_result_done != 0)
+                {
+                    Marshal.FreeHGlobal((IntPtr)((MYSQL_STMT_OLD*)_stmt)->bind->length);
+                    Marshal.FreeHGlobal((IntPtr)((MYSQL_STMT_OLD*)_stmt)->bind->is_null);
+                }
             }
 
             _rBind = (MYSQL_BIND*)Marshal.AllocHGlobal(sizeof(MYSQL_BIND) * _fieldCount);
@@ -272,7 +285,7 @@ namespace Server.Database
             // from m_rBind to m_stmt->bind and it is later freed by the `if (m_stmt->bind_result_done)` block just above here
             // MYSQL_STMT lifetime is equal to connection lifetime
             var isNullBuffer = (bool*)Marshal.AllocHGlobal(sizeof(bool) * _fieldCount);
-            var lengthBuffer = (UIntPtr*)Marshal.AllocHGlobal(sizeof(UIntPtr) * _fieldCount);
+            var lengthBuffer = (CULong*)Marshal.AllocHGlobal(sizeof(CULong) * _fieldCount);
 
             new Span<byte>(_rBind, sizeof(MYSQL_BIND) * _fieldCount).Fill(0);
             new Span<byte>(isNullBuffer, sizeof(bool) * _fieldCount).Fill(0);
@@ -305,7 +318,7 @@ namespace Server.Database
                 InitializeDatabaseFieldMetadata(&_fieldMetadata[i], &field[i], i);
 
                 _rBind[i].buffer_type = field[i].type;
-                _rBind[i].buffer_length = (UIntPtr)size;
+                _rBind[i].buffer_length = new CULong((nuint)size);
                 _rBind[i].length = &lengthBuffer[i];
                 _rBind[i].is_null = &isNullBuffer[i];
                 _rBind[i].error = default;
@@ -316,7 +329,7 @@ namespace Server.Database
             for (int i = 0, offset = 0; i < _fieldCount; ++i)
             {
                 _rBind[i].buffer = dataBuffer + offset;
-                offset += (int)_rBind[i].buffer_length;
+                offset += (int)_rBind[i].buffer_length.Value;
             }
 
             //- This is where we bind the bind the buffer to the statement
@@ -338,11 +351,11 @@ namespace Server.Database
                 {
                     _rows[(int)_rowPosition * _fieldCount + fIndex].SetMetadata(&_fieldMetadata[fIndex]);
 
-                    var buffer_length = (int)_rBind[fIndex].buffer_length;
-                    var fetched_length = (int)(*_rBind[fIndex].length);
+                    var buffer_length = (int)_rBind[fIndex].buffer_length.Value;
+                    var fetched_length = (int)(*_rBind[fIndex].length).Value;
                     if (!*_rBind[fIndex].is_null)
                     {
-                        void* buffer = _stmt->bind[fIndex].buffer;
+                        void* buffer = DatabaseLoader.IsMySQL8 ? ((MYSQL_STMT*)_stmt)->bind[fIndex].buffer : ((MYSQL_STMT_OLD*)_stmt)->bind[fIndex].buffer;
                         switch (_rBind[fIndex].buffer_type)
                         {
                             case MYSQL_TYPE_TINY_BLOB:
@@ -365,11 +378,14 @@ namespace Server.Database
                         _rows[(int)_rowPosition * _fieldCount + fIndex].SetByteValue((byte*)buffer, fetched_length);
 
                         // move buffer pointer to next part
-                        _stmt->bind[fIndex].buffer = (byte*)buffer + rowSize;
+                        if (DatabaseLoader.IsMySQL8)
+                            ((MYSQL_STMT*)_stmt)->bind[fIndex].buffer = (byte*)buffer + rowSize;
+                        else
+                            ((MYSQL_STMT_OLD*)_stmt)->bind[fIndex].buffer = (byte*)buffer + rowSize;
                     }
                     else
                     {
-                        _rows[(int)_rowPosition * _fieldCount + fIndex].SetByteValue(default, (int)(*_rBind[fIndex].length));
+                        _rows[(int)_rowPosition * _fieldCount + fIndex].SetByteValue(default, (int)(*_rBind[fIndex].length).Value);
                     }
                 }
                 _rowPosition++;

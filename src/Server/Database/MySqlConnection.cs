@@ -127,13 +127,15 @@ namespace Server.Database
             uint port = 0;
             string unix_socket;
 
-            mysql_options(mysqlInit, MYSQL_SET_CHARSET_NAME, "utf8");
+            mysql_options(mysqlInit, (int)MYSQL_SET_CHARSET_NAME, "utf8");
+
+            var option = DatabaseLoader.IsMySQL8 ? (int)MYSQL_OPT_PROTOCOL : (int)mysql_option_old.MYSQL_OPT_PROTOCOL;
 
             if (OperatingSystem.IsWindows())
             {
                 if (_connectionInfo.Host == ".") // named pipe use option (Windows)
                 {
-                    mysql_options(mysqlInit, MYSQL_OPT_PROTOCOL, (int)MYSQL_PROTOCOL_PIPE);
+                    mysql_options(mysqlInit, option, (int)MYSQL_PROTOCOL_PIPE);
                     port = 0;
                     unix_socket = string.Empty;
                 }
@@ -147,7 +149,7 @@ namespace Server.Database
             {
                 if (_connectionInfo.Host == ".") // socket use option (Unix/Linux)
                 {
-                    mysql_options(mysqlInit, MYSQL_OPT_PROTOCOL, (int)MYSQL_PROTOCOL_SOCKET);
+                    mysql_options(mysqlInit, option, (int)MYSQL_PROTOCOL_SOCKET);
                     _connectionInfo.Host = "localhost";
                     port = 0;
                     unix_socket = _connectionInfo.PortOrSocket;
@@ -159,6 +161,7 @@ namespace Server.Database
                 }
             }
 
+
             if (_connectionInfo.Ssl != "")
             {
                 if (mysql_get_client_version() >= 80000)
@@ -167,7 +170,8 @@ namespace Server.Database
                     if (_connectionInfo.Ssl == "ssl")
                         opt_use_ssl = SSL_MODE_REQUIRED;
 
-                    mysql_options(mysqlInit, MYSQL_OPT_SSL_MODE, (int)opt_use_ssl);
+                    option = DatabaseLoader.IsMySQL8 ? (int)MYSQL_OPT_SSL_MODE : (int)mysql_option_old.MYSQL_OPT_SSL_MODE;
+                    mysql_options(mysqlInit, option, (int)opt_use_ssl);
                 }
                 else
                 {
@@ -176,7 +180,8 @@ namespace Server.Database
                         opt_use_ssl = true;
 
                     const int MYSQL_OPT_SSL_ENFORCE = 38; // Exists in MySQL 5.7 but not 8.0+
-                    mysql_options(mysqlInit, (mysql_option)MYSQL_OPT_SSL_ENFORCE, opt_use_ssl);
+                    option = DatabaseLoader.IsMySQL8 ? (int)MYSQL_OPT_SSL_ENFORCE : (int)mysql_option_old.MYSQL_OPT_SSL_ENFORCE;
+                    mysql_options(mysqlInit, option, opt_use_ssl);
                 }
             }
 
@@ -245,8 +250,8 @@ namespace Server.Database
                 return;
             }
 
-            MYSQL_STMT* stmt = mysql_stmt_init(_mysql);
-            if ((IntPtr)stmt == IntPtr.Zero)
+            var stmt = mysql_stmt_init(_mysql);
+            if (stmt == IntPtr.Zero)
             {
                 FEL_LOG_ERROR("sql.sql", "In mysql_stmt_init() id: {0}, sql: \"{1}\"", index, sql);
                 FEL_LOG_ERROR("sql.sql", "{0}", mysql_error(_mysql));
@@ -300,8 +305,8 @@ namespace Server.Database
 
             mStmt!.BindParameters(stmt);
 
-            MYSQL_STMT* msql_STMT = mStmt.STMT;
-            MYSQL_BIND* msql_BIND = mStmt.Bind;
+            var msql_STMT = mStmt.STMT;
+            var msql_BIND = mStmt.Bind;
 
             var _s = GetMSTime();
 
@@ -335,7 +340,7 @@ namespace Server.Database
             return true;
         }
 
-        bool _Query(string sql, ref MYSQL_RES* pResult, ref MYSQL_FIELD* pFields, ref long pRowCount, ref int pFieldCount)
+        bool _Query(string sql, ref IntPtr pResult, ref MYSQL_FIELD* pFields, ref long pRowCount, ref int pFieldCount)
         {
             if (_mysql == IntPtr.Zero)
                 return false;
@@ -381,7 +386,7 @@ namespace Server.Database
             if (string.IsNullOrEmpty(sql))
                 return null;
 
-            MYSQL_RES* result = default;
+            IntPtr result = default;
             MYSQL_FIELD* fields = default;
             long rowCount = 0;
             int fieldCount = 0;
@@ -392,7 +397,7 @@ namespace Server.Database
             return new QueryResult(result, fields, rowCount, fieldCount);
         }
 
-        bool _Query(PreparedStatementBase stmt, ref MySqlPreparedStatement? mysqlStmt, ref MYSQL_RES* pResult, ref long pRowCount, ref int pFieldCount)
+        bool _Query(PreparedStatementBase stmt, ref MySqlPreparedStatement? mysqlStmt, ref IntPtr pResult, ref long pRowCount, ref int pFieldCount)
         {
             if (_mysql == default)
                 return false;
@@ -405,7 +410,7 @@ namespace Server.Database
             mStmt!.BindParameters(stmt);
             mysqlStmt = mStmt;
 
-            MYSQL_STMT* msql_STMT = mStmt.STMT;
+            var msql_STMT = mStmt.STMT;
             MYSQL_BIND* msql_BIND = mStmt.Bind;
 
             var _s = GetMSTime();
@@ -448,7 +453,7 @@ namespace Server.Database
         public PreparedQueryResult? Query(PreparedStatementBase stmt)
         {
             MySqlPreparedStatement? mysqlStmt = null;
-            MYSQL_RES* result = default;
+            IntPtr result = default;
             long rowCount = 0;
             int fieldCount = 0;
 

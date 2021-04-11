@@ -19,7 +19,7 @@ namespace Server.Database
 
     public unsafe class MySqlPreparedStatement : IDisposable
     {
-        MYSQL_STMT* _Mstmt;
+        IntPtr _Mstmt;
         int _paramCount;
         bool[] _paramsSet;
         MYSQL_BIND* _bind;
@@ -27,12 +27,12 @@ namespace Server.Database
 
         protected PreparedStatementBase? _stmt;
 
-        public MYSQL_STMT* STMT => _Mstmt;
+        public IntPtr STMT => _Mstmt;
         public MYSQL_BIND* Bind => _bind;
 
         public int ParameterCount => _paramCount;
 
-        public MySqlPreparedStatement(MYSQL_STMT* stmt, string queryString)
+        public MySqlPreparedStatement(IntPtr stmt, string queryString)
         {
             _Mstmt = stmt;
             _queryString = queryString;
@@ -211,22 +211,22 @@ namespace Server.Database
             AssertValidIndex(index);
             _paramsSet[index] = true;
 
-            var byteCount = (UIntPtr)Encoding.UTF8.GetByteCount(value);
+            var byteCount = new CULong((nuint)Encoding.UTF8.GetByteCount(value));
 
             MYSQL_BIND* bind = &_bind[index];
 
             bind->buffer_type = MYSQL_TYPE_VAR_STRING;
             Marshal.FreeHGlobal((IntPtr)bind->buffer);
-            bind->buffer = Marshal.AllocHGlobal((int)byteCount).ToPointer();
+            bind->buffer = Marshal.AllocHGlobal((int)byteCount.Value).ToPointer();
             bind->buffer_length = byteCount;
             bind->is_null_value = false;
 
             Marshal.FreeHGlobal((IntPtr)bind->length);
-            var lengthMem = Marshal.AllocHGlobal(sizeof(UIntPtr)).ToPointer();
-            MemoryMarshal.Write(new Span<byte>(lengthMem, sizeof(UIntPtr)), ref byteCount);
-            bind->length = (UIntPtr*)lengthMem;
+            var lengthMem = Marshal.AllocHGlobal(sizeof(CULong)).ToPointer();
+            MemoryMarshal.Write(new Span<byte>(lengthMem, sizeof(CULong)), ref byteCount);
+            bind->length = (CULong*)lengthMem;
 
-            Encoding.UTF8.GetBytes(value, new Span<byte>(bind->buffer, (int)byteCount));
+            Encoding.UTF8.GetBytes(value, new Span<byte>(bind->buffer, (int)byteCount.Value));
         }
 
         protected void SetParameter(byte index, DateTime value)
@@ -241,19 +241,19 @@ namespace Server.Database
 
             MYSQL_BIND* bind = &_bind[index];
 
-            var len = (UIntPtr)value.Length;
+            var len = new CULong((nuint)value.Length);
             bind->buffer_type = MYSQL_TYPE_BLOB;
             Marshal.FreeHGlobal((IntPtr)bind->buffer);
-            bind->buffer = Marshal.AllocHGlobal((int)len).ToPointer();
+            bind->buffer = Marshal.AllocHGlobal((int)len.Value).ToPointer();
             bind->buffer_length = len;
             bind->is_null_value = false;
 
             Marshal.FreeHGlobal((IntPtr)bind->length);
             var lengthMem = Marshal.AllocHGlobal(sizeof(UIntPtr)).ToPointer();
             MemoryMarshal.Write(new Span<byte>(lengthMem, sizeof(UIntPtr)), ref len);
-            bind->length = (UIntPtr*)lengthMem;
+            bind->length = (CULong*)lengthMem;
 
-            value.CopyTo(new Span<byte>(bind->buffer, (int)len));
+            value.CopyTo(new Span<byte>(bind->buffer, (int)len.Value));
         }
 
         public void ClearParameters()
@@ -326,10 +326,21 @@ namespace Server.Database
 
                 ClearParameters();
 
-                if (_Mstmt->bind_result_done != 0)
+                if (DatabaseLoader.IsMySQL8)
                 {
-                    Marshal.FreeHGlobal((IntPtr)_Mstmt->bind->length);
-                    Marshal.FreeHGlobal((IntPtr)_Mstmt->bind->is_null);
+                    if (((MYSQL_STMT*)_Mstmt)->bind_result_done != 0)
+                    {
+                        Marshal.FreeHGlobal((IntPtr)((MYSQL_STMT*)_Mstmt)->bind->length);
+                        Marshal.FreeHGlobal((IntPtr)((MYSQL_STMT*)_Mstmt)->bind->is_null);
+                    }
+                }
+                else
+                {
+                    if (((MYSQL_STMT_OLD*)_Mstmt)->bind_result_done != 0)
+                    {
+                        Marshal.FreeHGlobal((IntPtr)((MYSQL_STMT_OLD*)_Mstmt)->bind->length);
+                        Marshal.FreeHGlobal((IntPtr)((MYSQL_STMT_OLD*)_Mstmt)->bind->is_null);
+                    }
                 }
 
                 mysql_stmt_close(_Mstmt);
