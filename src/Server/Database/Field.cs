@@ -56,9 +56,9 @@ namespace Server.Database
         | BIGINT                 | GetInt64, GetUInt64                    |
         | FLOAT                  | GetFloat                               |
         | DOUBLE, DECIMAL        | GetDouble                              |
-        | CHAR, VARCHAR,         | GetCString, GetString                  |
-        | TINYTEXT, MEDIUMTEXT,  | GetCString, GetString                  |
-        | TEXT, LONGTEXT         | GetCString, GetString                  |
+        | CHAR, VARCHAR,         | GetString                  |
+        | TINYTEXT, MEDIUMTEXT,  | GetString                  |
+        | TEXT, LONGTEXT         | GetString                  |
         | TINYBLOB, MEDIUMBLOB,  | GetBinary, GetString                   |
         | BLOB, LONGBLOB         | GetBinary, GetString                   |
         | BINARY, VARBINARY      | GetBinary                              |
