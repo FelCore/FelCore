@@ -110,6 +110,9 @@ namespace Server.Database
                     case DateTime val:
                         SetParameter(pos, val);
                         break;
+                    default:
+                        FEL_LOG_WARN("sql.sql", "[WARN] Prepared Statement (id: {0}, param pos: {1}) bound to unsupported parameter data type: {2}!", _stmt!.Index, pos, data.GetType().Name);
+                        break;
                 }
                 ++pos;
             }
@@ -293,7 +296,7 @@ namespace Server.Database
 
             var sb = new StringBuilder(_queryString);
             int startIndex = 0;
-            foreach (var val in _stmt!.Parameters)
+            foreach (var value in _stmt!.Parameters)
             {
                 var index = sb.ToString().IndexOf('?', startIndex);
                 if (index != -1)
@@ -301,7 +304,62 @@ namespace Server.Database
                     startIndex = index;
 
                     sb.Remove(index, 1);
-                    sb.Insert(index, $"'{val}'");
+
+                    string valueStr = string.Empty;
+
+                    switch (value)
+                    {
+                        case bool val:
+                            valueStr = val ? "1" : "0";
+                            break;
+                        case byte val:
+                            valueStr = val.ToString();
+                            break;
+                        case sbyte val:
+                            valueStr = val.ToString();
+                            break;
+                        case ushort val:
+                            valueStr = val.ToString();
+                            break;
+                        case short val:
+                            valueStr = val.ToString();
+                            break;
+                        case uint val:
+                            valueStr = val.ToString();
+                            break;
+                        case int val:
+                            valueStr = val.ToString();
+                            break;
+                        case ulong val:
+                            valueStr = val.ToString();
+                            break;
+                        case long val:
+                            valueStr = val.ToString();
+                            break;
+                        case float val:
+                            valueStr = val.ToString();
+                            break;
+                        case double val:
+                            valueStr = val.ToString();
+                            break;
+                        case decimal val:
+                            valueStr = val.ToString();
+                            break;
+                        case null:
+                            valueStr = "NULL";
+                            break;
+                        case byte[] val:
+                            valueStr = "BINARY";
+                            break;
+                        case string val:
+                            valueStr = $"'{val}'";
+                            break;
+                        case DateTime val:
+                            valueStr = $"'{val.ToString("yyyy-MM-dd HH:mm:ss")}'";
+                            break;
+                    }
+
+                    sb.Insert(index, valueStr);
                 }
             }
 
