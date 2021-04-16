@@ -8,6 +8,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <Import Project="..\..\..\AOT.props" />
+
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.csproj" />
     <ProjectReference Include="..\Database\Database.csproj" />

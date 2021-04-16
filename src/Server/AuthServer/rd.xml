@@ -1,5 +1,17 @@
 <Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
   <Application>
-    <Assembly Name="AuthServer" Dynamic="Required All" />
+    <Assembly Name="AuthServer">
+      <Type Name="Server.AuthServer.AuthSession" Dynamic="Required All" />
+    </Assembly>
+
+    <Assembly Name="Common">
+      <Type Name="Common.AppenderConsole" Dynamic="Required All" />
+      <Type Name="Common.AppenderFile" Dynamic="Required All" />
+    </Assembly>
+
+    <Assembly Name="Database">
+      <Type Name="Server.Database.AppenderDB" Dynamic="Required All" />
+      <Type Name="Server.Database.LoginDatabaseConnection" Dynamic="Required All" />
+    </Assembly>
   </Application>
 </Directives>

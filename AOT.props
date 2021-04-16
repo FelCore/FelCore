@@ -1,0 +1,13 @@
+<Project>
+
+  <!--NativeAOT optimizations-->
+  <PropertyGroup>
+    <TrimMode>link</TrimMode>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
+    <IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
+    <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
+    <IlcFoldIdenticalMethodBodies>false</IlcFoldIdenticalMethodBodies>
+  </PropertyGroup>
+
+</Project>
