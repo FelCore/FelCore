@@ -231,7 +231,7 @@ namespace Server.Database
 
         protected void SetParameter(byte index, DateTime value)
         {
-            SetParameter(index, string.Format("{0:yyyy-MM-dd HH:mm:ss}", value));
+            SetParameter(index, value.ToString("yyyy-MM-dd HH:mm:ss"));
         }
 
         protected void SetParameter(byte index, ReadOnlySpan<byte> value)
