@@ -4,8 +4,8 @@
 
 using System;
 using System.Text;
-using System.Buffers;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using Common;
 using static Common.Errors;
 
@@ -73,11 +73,31 @@ namespace Server.Shared
         private int _wpos;
         private int _rpos;
 
-        private byte[] _storage;
+        private IntPtr _storage;
+        private int _size;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Span<byte> AsSpan()
+        {
+            return new Span<byte>((void*)_storage, _size);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Span<byte> AsSpan(int start)
+        {
+            return new Span<byte>((void*)_storage, _size).Slice(start);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Span<byte> AsSpan(int start, int length)
+        {
+            return new Span<byte>((void*)_storage, _size).Slice(start, length);
+        }
 
         public ByteBuffer(int initialSize)
         {
-            _storage = ArrayPool<byte>.Shared.Rent(initialSize);
+            _storage = Marshal.AllocHGlobal(initialSize);
+            _size = initialSize;
         }
 
         public ByteBuffer() : this(DEFAULT_SIZE)
@@ -89,25 +109,32 @@ namespace Server.Shared
             _wpos = right._wpos;
             _rpos = right._rpos;
 
-            _storage = ArrayPool<byte>.Shared.Rent(right._storage.Length);
-            Buffer.BlockCopy(right._storage, 0, _storage, 0, right._storage.Length);
+            _storage = Marshal.AllocHGlobal(right._size);
+            _size = right._size;
+
+            Buffer.MemoryCopy((void*)right._storage, (void*)_storage, (long)_size, (long)_size);
         }
 
         public ByteBuffer(MessageBuffer buffer)
         {
             _rpos = 0;
             _wpos = 0;
-            _storage = buffer.Move();
+
+            _size = buffer.Wpos();
+            _storage = Marshal.AllocHGlobal(_size);
+
+            buffer.Data().AsSpan(0, _size).CopyTo(new Span<byte>((void*)_storage, _size));
         }
 
         public ByteBuffer(ReadOnlySpan<byte> data)
         {
             _rpos = 0;
             _wpos = data.Length;
+            _size = data.Length;
 
-            _storage = ArrayPool<byte>.Shared.Rent(_wpos);
+            _storage = Marshal.AllocHGlobal(_size);
 
-            data.CopyTo(_storage);
+            data.CopyTo(AsSpan());
         }
 
         ~ByteBuffer()
@@ -117,28 +144,24 @@ namespace Server.Shared
 
         public static implicit operator ByteBuffer(MessageBuffer buffer) => new ByteBuffer(buffer);
 
-        public ReadOnlySpan<byte> ReadSpan => _storage.AsSpan(new Range(_rpos, _wpos));
+        public ReadOnlySpan<byte> ReadSpan => AsSpan(_rpos, _wpos - _rpos);
 
-        public ReadOnlySpan<byte> WriteSpan => _storage.AsSpan(0, _wpos);
+        public ReadOnlySpan<byte> WriteSpan => AsSpan(0, _wpos);
 
         public int Size()
         {
-            return _storage.Length;
+            return _size;
         }
 
         public void Resize(int newSize, bool resetPos = true)
         {
-            var temp = ArrayPool<byte>.Shared.Rent(newSize);
-            Buffer.BlockCopy(_storage, 0, temp, 0, _storage.Length > temp.Length ? temp.Length : _storage.Length);
-
-            ArrayPool<byte>.Shared.Return(_storage);
-
-            _storage = temp;
+            _storage = Marshal.ReAllocHGlobal(_storage, (IntPtr)newSize);
+            _size = newSize;
 
             if (resetPos)
             {
                 _rpos = 0;
-                _wpos = Size();
+                _wpos = _size;
             }
         }
 
@@ -149,7 +172,7 @@ namespace Server.Shared
                 if (pos > Size())
                     throw new ByteBufferPositionException(false, pos, 1, Size());
 
-                return _storage[pos];
+                return AsSpan()[pos];
             }
         }
 
@@ -178,14 +201,14 @@ namespace Server.Shared
             _rpos = 0;
         }
 
-        public byte[] Data()
+        public ReadOnlySpan<byte> Data()
         {
-            return _storage;
+            return new ReadOnlySpan<byte>((void*)_storage, _size);
         }
 
         public void Clear()
         {
-            _storage.AsSpan().Clear(); // Expected it faster than Array.Clear()
+            AsSpan().Clear(); // Expected it faster than Array.Clear()
             _rpos = _wpos = 0;
         }
 
@@ -195,19 +218,19 @@ namespace Server.Shared
             Assert(Size() < 10000000);
 
             int newSize = _wpos + addSize;
-            if (_storage.Length < newSize) // custom memory allocation rules
+            if (_size < newSize) // custom memory allocation rules
             {
                 if (newSize < 100)
-                    Resize(256, false);
+                    Resize(300, false);
                 else if (newSize < 750)
-                    Resize(2048, false);
+                    Resize(2500, false);
                 else if (newSize < 6000)
-                    Resize(8192, false);
+                    Resize(10000, false);
                 else
                     Resize(400000, false);
             }
 
-            if (_storage.Length < newSize)
+            if (_size < newSize)
                 Resize(newSize, false);
         }
 
@@ -219,7 +242,7 @@ namespace Server.Shared
         {
             EnsureFreeSpace(src.Length);
 
-            src.CopyTo(_storage.AsSpan(_wpos));
+            src.CopyTo(AsSpan(_wpos));
 
             _wpos += src.Length;
         }
@@ -229,11 +252,11 @@ namespace Server.Shared
             if (string.IsNullOrEmpty(value)) return;
 
             var byteCount = Encoding.UTF8.GetByteCount(value);
-            EnsureFreeSpace(byteCount);
+            EnsureFreeSpace(byteCount + 1);
 
-            Encoding.UTF8.GetBytes(value, _storage.AsSpan(_wpos));
+            Encoding.UTF8.GetBytes(value, AsSpan(_wpos));
             // Append '\0'
-            _storage.AsSpan(_wpos + byteCount)[0] = 0;
+            AsSpan(_wpos + byteCount)[0] = 0;
 
             _wpos += byteCount + 1;
         }
@@ -241,7 +264,7 @@ namespace Server.Shared
         public void Append<T>(T value) where T : unmanaged
         {
             EnsureFreeSpace(sizeof(T));
-            MemoryMarshal.Write<T>(_storage.AsSpan(_wpos, sizeof(T)), ref value);
+            MemoryMarshal.Write<T>(AsSpan(_wpos, sizeof(T)), ref value);
             _wpos += sizeof(T);
         }
         public void Append(ByteBuffer buffer)
@@ -255,7 +278,7 @@ namespace Server.Shared
             Assert(pos >= 0, "Attempted to put value with invalid pos: {0} in ByteBuffer", pos);
             Assert(pos + src.Length <= Size(), "Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", src.Length, pos, Size());
 
-            src.CopyTo(_storage.AsSpan(pos));
+            src.CopyTo(AsSpan(pos));
         }
 
         public void Put<T>(int pos, T value) where T : unmanaged
@@ -263,7 +286,7 @@ namespace Server.Shared
             Assert(pos >= 0, "Attempted to put value with invalid pos: {0} in ByteBuffer", pos);
             Assert(pos + sizeof(T) <= Size(), "Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", sizeof(T), pos, Size());
 
-            MemoryMarshal.Write<T>(_storage.AsSpan(pos), ref value);
+            MemoryMarshal.Write<T>(AsSpan(pos), ref value);
         }
 
         public T Read<T>() where T : unmanaged
@@ -279,7 +302,7 @@ namespace Server.Shared
             if (pos + sizeof(T) > Size())
                 throw new ByteBufferPositionException(false, pos, sizeof(T), Size());
 
-            ref var ret = ref MemoryMarshal.AsRef<T>(_storage.AsSpan(pos));
+            ref var ret = ref MemoryMarshal.AsRef<T>(AsSpan(pos));
 
             return ref ret;
         }
@@ -318,7 +341,7 @@ namespace Server.Shared
             }
 
             if (len > 0)
-                return Encoding.UTF8.GetString(_storage, index, len);
+                return Encoding.UTF8.GetString(AsSpan(index, len));
             else
                 return string.Empty;
         }
@@ -330,7 +353,7 @@ namespace Server.Shared
 
             byte[] bytes = new byte[len];
 
-            Buffer.BlockCopy(_storage, _rpos, bytes, 0, len);
+            AsSpan(_rpos, len).CopyTo(bytes);
 
             _rpos += len;
 
@@ -342,7 +365,7 @@ namespace Server.Shared
             if (_rpos + dest.Length > Size())
                 throw new ByteBufferPositionException(false, _rpos, dest.Length, Size());
 
-            _storage.AsSpan(_rpos, dest.Length).CopyTo(dest);
+            AsSpan(_rpos, dest.Length).CopyTo(dest);
 
             _rpos += dest.Length;
         }
@@ -374,7 +397,7 @@ namespace Server.Shared
             sb.Append("STORAGE_SIZE ").Append(Size()).Append(" : ");
             for (uint i = 0; i < Size(); ++i)
             {
-                sb.Append(_storage[i]).Append(" - ");
+                sb.Append(((byte*)_storage)[i]).Append(" - ");
             }
             sb.Append(" ");
 
@@ -388,7 +411,7 @@ namespace Server.Shared
             sb.Append("STORAGE_SIZE ").Append(Size()).Append(" : ");
             for (uint i = 0; i < Size(); ++i)
             {
-                sb.Append((char)_storage[i]);
+                sb.Append((char)((byte*)_storage)[i]);
             }
             sb.Append(" ");
 
@@ -441,7 +464,9 @@ namespace Server.Shared
             {
             }
 
-            ArrayPool<byte>.Shared.Return(_storage);
+            Marshal.FreeHGlobal(_storage);
+            _storage = IntPtr.Zero;
+            _size = 0;
 
             _disposed = true;
         }
