@@ -200,6 +200,26 @@ namespace Server.Database
             return Marshal.PtrToStringAnsi((IntPtr)_data.Value, _data.Length);
         }
 
+        public DateTime GetDateTime()
+        {
+            if (_data.Value == default)
+                return DateTime.MinValue;
+
+            Assert(_meta->Type == DatabaseFieldTypes.Int64, "Cannot get DateTime of field with data type: {0}, field data must be a unix timestamp!", _meta->FieldType);
+
+            return DateTimeOffset.FromUnixTimeSeconds(GetInt64()).LocalDateTime;
+        }
+
+        public TimeSpan GetTimeSpan()
+        {
+            if (_data.Value == default)
+                return TimeSpan.MinValue;
+
+            Assert(IsNumeric(), "Cannot get TimeSpan of field with data type: {0}, field data must be a number of total seconds!", _meta->FieldType);
+
+            return new TimeSpan(0, 0, (int)GetUInt32());
+        }
+
         public ReadOnlySpan<byte> GetBinary()
         {
             if (_data.Value == default || _data.Length == 0)

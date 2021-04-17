@@ -49,7 +49,7 @@ CREATE TABLE `account` (
   `recruiter` int unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=98 DEFAULT CHARSET=utf8 COMMENT='Account System';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Account System';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -229,7 +229,7 @@ DROP TABLE IF EXISTS `logs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `logs` (
-  `time` datetime NOT NULL,
+  `time` timestamp NOT NULL,
   `realm` int unsigned NOT NULL,
   `type` varchar(250) NOT NULL,
   `level` tinyint unsigned NOT NULL DEFAULT '0',
@@ -324,7 +324,7 @@ CREATE TABLE `realmlist` (
   `gamebuild` int unsigned NOT NULL DEFAULT '8606',
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COMMENT='Realm System';
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='Realm System';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
