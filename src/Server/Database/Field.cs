@@ -220,6 +220,13 @@ namespace Server.Database
             return new TimeSpan(0, 0, (int)GetUInt32());
         }
 
+        public int GetBinaryLength()
+        {
+            if (_data.Value == default) return 0;
+
+            return _data.Length;
+        }
+
         public ReadOnlySpan<byte> GetBinary()
         {
             if (_data.Value == default || _data.Length == 0)
