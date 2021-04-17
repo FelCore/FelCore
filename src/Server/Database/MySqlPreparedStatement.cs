@@ -237,6 +237,12 @@ namespace Server.Database
             SetParameter(index, value.ToString("yyyy-MM-dd HH:mm:ss"));
         }
 
+        protected void SetParameter(byte index, TimeSpan value)
+        {
+            Assert(value.Days <= 34, "Prepared statement {0} cannot set a TimeSpan value {1} that its days is longer than 34", index, value);
+            SetParameter(index, value.ToString(@"d\ hh\:mm\:ss"));
+        }
+
         protected void SetParameter(byte index, ReadOnlySpan<byte> value)
         {
             AssertValidIndex(index);
