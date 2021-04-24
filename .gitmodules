@@ -1,3 +1,6 @@
 [submodule "dep/MySqlSharp"]
 	path = dep/MySqlSharp
 	url = git@github.com:ryancheung/MySqlSharp.git
+[submodule "dep/RecastSharp"]
+	path = dep/RecastSharp
+	url = git@github.com:ryancheung/RecastSharp.git
