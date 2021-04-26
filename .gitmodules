@@ -4,3 +4,6 @@
 [submodule "dep/RecastSharp"]
 	path = dep/RecastSharp
 	url = git@github.com:ryancheung/RecastSharp.git
+[submodule "dep/SharpMPQ"]
+	path = dep/SharpMPQ
+	url = git@github.com:ryancheung/SharpMPQ.git
