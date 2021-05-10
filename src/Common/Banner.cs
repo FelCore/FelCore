@@ -12,6 +12,7 @@ namespace Common
         public static void Show(string appName, Log log, LogExtraInfo logExtraInfo)
         {
             log($"{GitRevision.FullVersion} ({appName})");
+            log(GitRevision.DotnetRuntime);
             log("<Ctrl-C> to stop.");
 
             log(@"

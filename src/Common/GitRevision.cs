@@ -3,6 +3,8 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Common
 {
@@ -16,6 +18,7 @@ namespace Common
         public const string Minor = ThisAssembly.Git.SemVer.Minor;
         public const string Patch = ThisAssembly.Git.SemVer.Patch;
         public static readonly string FileVersion = $"{Hash}({Major}.{Minor}.{Patch}) {Date} ({Branch})";
+        public static readonly string DotnetRuntime;
         public static readonly string OSPlatform;
         public static readonly string FullVersion;
         public static readonly string HostOSVersion = $"{Environment.OSVersion.Platform} {Environment.OSVersion.VersionString}";
@@ -23,6 +26,11 @@ namespace Common
 
         static GitRevision()
         {
+            DotnetRuntime = string.Format("Runtime: {0} (Mode: {1}) ",
+                RuntimeInformation.FrameworkDescription,
+                Environment.Version.Major >= 6 && !RuntimeFeature.IsDynamicCodeSupported ? "NativeAOT" : "JIT"
+            );
+
             if (OperatingSystem.IsWindows())
             {
                 if (Environment.Is64BitOperatingSystem)
