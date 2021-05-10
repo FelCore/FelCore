@@ -196,6 +196,9 @@ namespace Common
 
             try
             {
+                // Hackfix for GetValueOrDefault<T>()
+                if (string.IsNullOrEmpty(_config[name].StringValue))
+                    return def;
                 return _config[name].GetValueOrDefault<T>(def, true);
             }
             catch (SettingValueCastException)
