@@ -65,21 +65,17 @@ namespace Server.Database.Updater
 
         public static string GetBaseFile()
         {
-            string baseDBFile = "";
             switch (_dbTypeName)
             {
                 case "LoginDatabaseConnection":
-                    baseDBFile = "/sql/base/fel_auth_database.sql";
-                    break;
+                    return Path.Combine(sConfigMgr.GetStringDefault("SourceDirectory", "."), "sql/base/fel_auth_database.sql");
                 case "CharacterDatabaseConnection":
-                    baseDBFile = "/sql/base/fel_characters_database.sql";
-                    break;
+                    return Path.Combine(sConfigMgr.GetStringDefault("SourceDirectory", "."), "sql/base/fel_characters_database.sql");
                 case "WorldDatabaseConnection":
-                    baseDBFile = DatabaseLoader.FULL_DATABASE;
-                    break;
+                    return GitRevision.FullDatabase;
             }
 
-            return sConfigMgr.GetStringDefault("SourceDirectory", ".") + baseDBFile;
+            return string.Empty;
         }
 
         public static bool IsEnabled(uint updateMask)

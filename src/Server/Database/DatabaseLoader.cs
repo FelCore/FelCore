@@ -27,8 +27,6 @@ namespace Server.Database
 
     public class DatabaseLoader
     {
-        public static string FULL_DATABASE = "FELDB_full_world.sql";
-
         public static bool IsMySQL8 => MySqlSharp.NativeMethods.mysql_get_client_version() >= 80000;
 
         public DatabaseLoader(string logger, int defaultUpdateMask)

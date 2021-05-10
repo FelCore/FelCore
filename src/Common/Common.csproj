@@ -8,6 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="sharpconfig" Version="3.2.9.1" />
+
+    <PackageReference Include="GitInfo" Version="2.1.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

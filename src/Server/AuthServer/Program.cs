@@ -78,7 +78,7 @@ namespace Server.AuthServer
             sLog.RegisterAppender<AppenderDB>();
             sLog.Initialize();
 
-            Banner.Show("AuthServer", "FelCore 0.1.0",
+            Banner.Show("AuthServer",
                 (s) =>
                 {
                     FEL_LOG_INFO("server.authserver", "{0}", s);

@@ -9,9 +9,9 @@ namespace Common
         public delegate void Log(string message);
         public delegate void LogExtraInfo();
 
-        public static void Show(string appName, string appVersion, Log log, LogExtraInfo logExtraInfo)
+        public static void Show(string appName, Log log, LogExtraInfo logExtraInfo)
         {
-            log($"{appVersion} ({appName})");
+            log($"{GitRevision.FullVersion} ({appName})");
             log("<Ctrl-C> to stop.");
 
             log(@"
