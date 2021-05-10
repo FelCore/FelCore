@@ -141,16 +141,21 @@ namespace Common
 
         public bool GetBoolDefault(string name, bool def, bool quiet = false)
         {
-            string val = GetValueDefault(name, def ? "1" : "0", quiet);
+            string val = GetValueDefault(name, def ? "true" : "false", quiet);
             val = val.Replace("\"", string.Empty);
+
+            if (val == "1")
+                val = "true";
+            else if (val == "0")
+                val = "false";
 
             if (bool.TryParse(val, out var result))
                 return result;
             else
             {
-                if (val == "1")
+                if (val == "true")
                     return true;
-                else if (val == "0")
+                else if (val == "false")
                     return false;
 
                 FEL_LOG_ERROR("server.loading", "Bad value defined for name {0} in config file {1}, going to use '{2}' instead",
