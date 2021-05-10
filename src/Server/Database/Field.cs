@@ -227,12 +227,12 @@ namespace Server.Database
             return _data.Length;
         }
 
-        public ReadOnlySpan<byte> GetBinary()
+        public byte[] GetBinary()
         {
             if (_data.Value == default || _data.Length == 0)
-                return ReadOnlySpan<byte>.Empty;
+                return Array.Empty<byte>();
 
-            Span<byte> ret = new byte[_data.Length];
+            var ret = new byte[_data.Length];
             _data.Span.CopyTo(ret);
             return ret;
         }
