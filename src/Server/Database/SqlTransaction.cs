@@ -80,7 +80,7 @@ namespace Server.Database
 
         public const int DEADLOCK_MAX_RETRY_TIME_MS = 60000;
 
-        protected new virtual bool Execute()
+        public override bool Execute()
         {
             var errorCode = TryExecute();
             if (errorCode == 0)
@@ -128,7 +128,7 @@ namespace Server.Database
     {
         public SqlTransactionWithResultTask(SqlTransactionBase trans) : base(trans) { }
 
-        protected override bool Execute()
+        public override bool Execute()
         {
             var errorCode = TryExecute();
             if (errorCode == 0)
