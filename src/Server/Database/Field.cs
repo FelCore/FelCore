@@ -3,6 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
+using System.Text;
 using System.Runtime.InteropServices;
 using MySqlSharp;
 using static Common.Errors;
@@ -197,7 +198,7 @@ namespace Server.Database
         {
             if (_data.Value == default) return string.Empty;
 
-            return Marshal.PtrToStringAnsi((IntPtr)_data.Value, _data.Length);
+            return Encoding.UTF8.GetString(_data.Value, _data.Length);
         }
 
         public DateTime GetDateTime()
