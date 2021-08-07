@@ -110,6 +110,9 @@ namespace Server.Database
                     case DateTime val:
                         SetParameter(pos, val);
                         break;
+                    case TimeSpan val:
+                        SetParameter(pos, val);
+                        break;
                     default:
                         FEL_LOG_WARN("sql.sql", "[WARN] Prepared Statement (id: {0}, param pos: {1}) bound to unsupported parameter data type: {2}!", _stmt!.Index, pos, data.GetType().Name);
                         break;
