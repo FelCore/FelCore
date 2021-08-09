@@ -140,7 +140,7 @@ namespace Common
                 if (!string.IsNullOrEmpty(inputFile))
                 {
                     var stdin = proc.StandardInput;
-                    stdin.Write(File.ReadAllText(inputFile));
+                    stdin.BaseStream.Write(File.ReadAllBytes(inputFile));
 
                     stdin.Close();
                 }
