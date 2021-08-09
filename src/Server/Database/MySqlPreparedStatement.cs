@@ -237,7 +237,12 @@ namespace Server.Database
 
         protected void SetParameter(byte index, DateTime value)
         {
-            SetParameter(index, value.ToString("yyyy-MM-dd HH:mm:ss"));
+            Assert(value.Kind != DateTimeKind.Local, "Prepared statement {0} cannot set a local DateTime value {1}", index, value);
+
+            if (value <= Time.UnixEpoch)
+                SetParameter(index, 0U);
+            else
+                SetParameter(index, (uint)Time.GetTimestamp(value));
         }
 
         protected void SetParameter(byte index, TimeSpan value)

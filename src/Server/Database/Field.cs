@@ -206,9 +206,9 @@ namespace Server.Database
             if (_data.Value == default)
                 return DateTime.MinValue;
 
-            Assert(_meta->Type == DatabaseFieldTypes.Int64, "Cannot get DateTime of field with data type: {0}, field data must be a unix timestamp!", _meta->FieldType);
+            Assert(_meta->Type == DatabaseFieldTypes.Int32 || _meta->Type == DatabaseFieldTypes.Int64, "Cannot get DateTime of field with data type: {0}, field data must be a unix timestamp!", _meta->FieldType);
 
-            return DateTimeOffset.FromUnixTimeSeconds(GetInt64()).LocalDateTime;
+            return Common.Time.GetDateTime(_meta->Type == DatabaseFieldTypes.Int32 ? GetUInt32() : GetInt64());
         }
 
         public TimeSpan GetTimeSpan()
