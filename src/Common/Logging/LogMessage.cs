@@ -17,7 +17,7 @@ namespace Common
             Text = text;
             Prefix = string.Empty;
             Param1 = string.Empty;
-            MTime = Time.LocalNow;
+            MTime = Time.Now;
         }
         public LogMessage(LogLevel level, string type, string text, string param1)
         {
@@ -26,13 +26,13 @@ namespace Common
             Text = text;
             Prefix = string.Empty;
             Param1 = param1;
-            MTime = Time.LocalNow;
+            MTime = Time.Now;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string getTimeStr(DateTime time)
         {
-            return time.ToString("yyyy-MM-dd_HH:mm:ss");
+            return time.ToLocalTime().ToString("yyyy-MM-dd_HH:mm:ss");
         }
 
         public string getTimeStr()

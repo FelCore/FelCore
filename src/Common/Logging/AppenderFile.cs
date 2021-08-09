@@ -71,7 +71,7 @@ namespace Common
 
                 string newName = new string(fullName);
                 newName += '.';
-                newName += LogMessage.getTimeStr(Time.LocalNow);
+                newName += LogMessage.getTimeStr(Time.Now);
                 newName = newName.Replace(':', '-');
 
                 try

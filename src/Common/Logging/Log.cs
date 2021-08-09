@@ -44,7 +44,7 @@ namespace Common
 
         private static string GetTimestampStr()
         {
-            var now = Time.LocalNow;
+            var now = Time.Now;
 
             //       yyyy   year
             //       MM     month (2 digits 01-12)

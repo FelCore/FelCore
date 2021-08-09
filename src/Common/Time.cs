@@ -11,8 +11,9 @@ namespace Common
     public static class Time
     {
         public static readonly DateTime StartTime = DateTime.UtcNow;
-        private static readonly DateTime LocalStartTime = DateTime.Now;
         private static readonly Stopwatch Stopwatch = Stopwatch.StartNew();
+
+        public static readonly DateTime UnixEpoch = DateTimeOffset.UnixEpoch.UtcDateTime;
 
         public static DateTime Now
         {
@@ -20,10 +21,18 @@ namespace Common
             get { return StartTime + Stopwatch.Elapsed; }
         }
 
-        public static DateTime LocalNow
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long GetTimestamp(DateTime time)
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { return LocalStartTime + Stopwatch.Elapsed; }
+            //NOTE time is assumed to be UTC time.
+            return (long)time.Subtract(UnixEpoch).TotalSeconds;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DateTime GetDateTime(long timestamp)
+        {
+            if (timestamp < 0) return DateTime.MinValue;
+            return UnixEpoch.AddSeconds(timestamp);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
