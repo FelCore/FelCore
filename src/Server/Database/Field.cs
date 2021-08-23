@@ -214,7 +214,7 @@ namespace Server.Database
         public TimeSpan GetTimeSpan()
         {
             if (_data.Value == default)
-                return TimeSpan.MinValue;
+                return TimeSpan.Zero;
 
             Assert(IsNumeric(), "Cannot get TimeSpan of field with data type: {0}, field data must be a number of total seconds!", _meta->FieldType);
 
