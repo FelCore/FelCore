@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using Common;
 using static Common.Errors;
+using Cysharp.Text;
 
 namespace Server.Shared
 {
@@ -392,60 +393,72 @@ namespace Server.Shared
 
         public void PrintStorage()
         {
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append("STORAGE_SIZE ").Append(Size()).Append(" : ");
-            for (uint i = 0; i < Size(); ++i)
+            using(var sb = ZString.CreateStringBuilder(true))
             {
-                sb.Append(((byte*)_storage)[i]).Append(" - ");
-            }
-            sb.Append(" ");
+                sb.Append("STORAGE_SIZE ");
+                sb.Append(Size());
+                sb.Append(" : ");
+                for (uint i = 0; i < Size(); ++i)
+                {
+                    sb.Append(((byte*)_storage)[i]);
+                    sb.Append(" - ");
+                }
+                sb.Append(" ");
 
-            Console.WriteLine(sb.ToString());
+                Console.WriteLine(sb.ToString());
+            }
         }
 
         public void PrintTextLike()
         {
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append("STORAGE_SIZE ").Append(Size()).Append(" : ");
-            for (uint i = 0; i < Size(); ++i)
+            using(var sb = ZString.CreateStringBuilder(true))
             {
-                sb.Append((char)((byte*)_storage)[i]);
-            }
-            sb.Append(" ");
+                sb.Append("STORAGE_SIZE ");
+                sb.Append(Size());
+                sb.Append(" : ");
+                for (uint i = 0; i < Size(); ++i)
+                {
+                    sb.Append((char)((byte*)_storage)[i]);
+                }
+                sb.Append(" ");
 
-            Console.WriteLine(sb.ToString());
+                Console.WriteLine(sb.ToString());
+            }
         }
 
         public void PrintHexlike()
         {
             uint j = 1, k = 1;
 
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append("STORAGE_SIZE ").Append(Size()).Append(" : ");
-
-            for (uint i = 0; i < Size(); ++i)
+            using(var sb = ZString.CreateStringBuilder(true))
             {
-                if ((i == (j * 8)) && ((i != (k * 16))))
+                sb.Append("STORAGE_SIZE ");
+                sb.Append(Size());
+                sb.Append(" : ");
+
+                for (uint i = 0; i < Size(); ++i)
                 {
-                    sb.Append("| ");
-                    ++j;
-                }
-                else if (i == (k * 16))
-                {
-                    sb.Append("\n");
-                    ++k;
-                    ++j;
+                    if ((i == (j * 8)) && ((i != (k * 16))))
+                    {
+                        sb.Append("| ");
+                        ++j;
+                    }
+                    else if (i == (k * 16))
+                    {
+                        sb.Append("\n");
+                        ++k;
+                        ++j;
+                    }
+
+                    sb.Append("0x");
+                    sb.Append(Read<byte>().ToString("X2"));
+                    sb.Append(" ");
                 }
 
-                sb.Append("0x").Append(Read<byte>().ToString("X2")).Append(" ");
+                sb.Append(" ");
+
+                Console.WriteLine(sb.ToString());
             }
-
-            sb.Append(" ");
-
-            Console.WriteLine(sb.ToString());
         }
 
         bool _disposed;

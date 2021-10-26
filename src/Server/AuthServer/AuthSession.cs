@@ -260,7 +260,7 @@ namespace Server.AuthServer
             var packet = GetReadBuffer();
             while (packet.GetActiveSize() > 0)
             {
-                var cmd = (eAuthCmd)packet.ReadSpan[0];
+                var cmd = (eAuthCmd)packet.GetReadSpan()[0];
 
                 AuthHandler handler;
 
@@ -283,7 +283,7 @@ namespace Server.AuthServer
 
                 if (cmd == AUTH_LOGON_CHALLENGE || cmd == AUTH_RECONNECT_CHALLENGE)
                 {
-                    ref readonly var challenge = ref MemoryMarshal.AsRef<AuthLogonChallenge_C>(packet.ReadSpan);
+                    ref readonly var challenge = ref MemoryMarshal.AsRef<AuthLogonChallenge_C>(packet.GetReadSpan());
                     size += challenge.size;
 
                     if (size > MAX_ACCEPTED_CHALLENGE_SIZE)
@@ -322,7 +322,7 @@ namespace Server.AuthServer
         {
             _status = STATUS_CLOSED;
 
-            ref readonly var challenge = ref MemoryMarshal.AsRef<AuthLogonChallenge_C>(GetReadBuffer().ReadSpan);
+            ref readonly var challenge = ref MemoryMarshal.AsRef<AuthLogonChallenge_C>(GetReadBuffer().GetReadSpan());
 
             if (challenge.size - (sizeof(AuthLogonChallenge_C) - AUTH_LOGON_CHALLENGE_INITIAL_SIZE - 1) != challenge.I_len)
                 return false;
@@ -486,7 +486,7 @@ namespace Server.AuthServer
             _status = STATUS_CLOSED;
 
             // Read the packet
-            ref readonly var logonProof = ref MemoryMarshal.AsRef<AuthLogonProof_C>(GetReadBuffer().ReadSpan);
+            ref readonly var logonProof = ref MemoryMarshal.AsRef<AuthLogonProof_C>(GetReadBuffer().GetReadSpan());
 
             // If the client has no valid version
             if (_expversion == NO_VALID_EXP_FLAG)
@@ -505,8 +505,8 @@ namespace Server.AuthServer
                 // Check auth token
                 if ((logonProof.securityFlags & 0x04) != 0 || !string.IsNullOrEmpty(_totpSecret))
                 {
-                    byte size = MemoryMarshal.Read<byte>(GetReadBuffer().ReadSpan.Slice(sizeof(AuthLogonProof_C)));
-                    var token = Encoding.UTF8.GetString(GetReadBuffer().ReadSpan.Slice(sizeof(AuthLogonProof_C) + 1, size));
+                    byte size = MemoryMarshal.Read<byte>(GetReadBuffer().GetReadSpan().Slice(sizeof(AuthLogonProof_C)));
+                    var token = Encoding.UTF8.GetString(GetReadBuffer().GetReadSpan().Slice(sizeof(AuthLogonProof_C) + 1, size));
 
                     GetReadBuffer().ReadCompleted(1 + size);
                     var validToken = TOTP.GenerateToken(_totpSecret!);
@@ -650,7 +650,7 @@ namespace Server.AuthServer
         {
             _status = STATUS_CLOSED;
 
-            ref readonly var challenge = ref MemoryMarshal.AsRef<AuthLogonChallenge_C>(GetReadBuffer().ReadSpan);
+            ref readonly var challenge = ref MemoryMarshal.AsRef<AuthLogonChallenge_C>(GetReadBuffer().GetReadSpan());
 
             if (challenge.size - (sizeof(AuthLogonChallenge_C) - AUTH_LOGON_CHALLENGE_INITIAL_SIZE - 1) != challenge.I_len)
                 return false;
@@ -719,7 +719,7 @@ namespace Server.AuthServer
             FEL_LOG_DEBUG("server.authserver", "Entering _HandleReconnectProof");
             _status = STATUS_CLOSED;
 
-            ref readonly var reconnectProof = ref MemoryMarshal.AsRef<AuthReconnectProof_C>(GetReadBuffer().ReadSpan);
+            ref readonly var reconnectProof = ref MemoryMarshal.AsRef<AuthReconnectProof_C>(GetReadBuffer().GetReadSpan());
 
             if (string.IsNullOrEmpty(_accountInfo.Login))
                 return false;

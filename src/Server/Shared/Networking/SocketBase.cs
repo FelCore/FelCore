@@ -85,10 +85,7 @@ namespace Server.Shared
                 _readBuffer.Dispose();
 
                 while (_writeQueue.Count > 0)
-                {
-                    var buffer = _writeQueue.Dequeue();
-                    buffer.Dispose();
-                }
+                    _writeQueue.Dequeue().Dispose();
             }
 
             _disposed = true;
@@ -222,7 +219,7 @@ namespace Server.Shared
                 _writeQueue.Peek().ReadCompleted(transferedBytes);
 
                 if (_writeQueue.Peek().GetActiveSize() <= 0)
-                    _writeQueue.Dequeue();
+                    _writeQueue.Dequeue().Dispose();
 
                 _isWritingAsync.Exchange(false);
 
