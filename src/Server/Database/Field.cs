@@ -218,7 +218,7 @@ namespace Server.Database
 
             Assert(IsNumeric(), "Cannot get TimeSpan of field with data type: {0}, field data must be a number of total seconds!", _meta->FieldType);
 
-            return new TimeSpan(0, 0, (int)GetUInt32());
+            return new TimeSpan(0, 0, GetInt32());
         }
 
         public int GetBinaryLength()

@@ -92,7 +92,7 @@ namespace Server.Database
                 lock (_deadlockLock)
                 {
                     // Handle MySQL Errno 1213 without extending deadlock to the core itself
-                    for (long loopDuration = 0, startMSTime = GetMSTime(); loopDuration <= DEADLOCK_MAX_RETRY_TIME_MS; loopDuration = GetMSTimeDiffToNow(startMSTime))
+                    for (uint loopDuration = 0, startMSTime = GetMSTime(); loopDuration <= DEADLOCK_MAX_RETRY_TIME_MS; loopDuration = GetMSTimeDiffToNow(startMSTime))
                     {
                         if (TryExecute() == 0)
                             return true;
@@ -143,7 +143,7 @@ namespace Server.Database
                 lock (_deadlockLock)
                 {
                     // Handle MySQL Errno 1213 without extending deadlock to the core itself
-                    for (long loopDuration = 0, startMSTime = GetMSTime(); loopDuration <= DEADLOCK_MAX_RETRY_TIME_MS; loopDuration = GetMSTimeDiffToNow(startMSTime))
+                    for (uint loopDuration = 0, startMSTime = GetMSTime(); loopDuration <= DEADLOCK_MAX_RETRY_TIME_MS; loopDuration = GetMSTimeDiffToNow(startMSTime))
                     {
                         if (TryExecute() == 0)
                         {

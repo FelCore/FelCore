@@ -10,6 +10,7 @@ using Common;
 using Common.Extensions;
 using static Common.Log;
 using static Common.Util;
+using Cysharp.Text;
 
 namespace Server.Database.Updater
 {
@@ -428,25 +429,27 @@ namespace Server.Database.Updater
             if (storage.Count == 0)
                 return;
 
-            var update = new StringBuilder();
-            var remaining = storage.Count;
-
-            update.Append("DELETE FROM `updates` WHERE `name` IN(");
-
-            foreach (var item in storage)
+            using (var update = ZString.CreateStringBuilder(true))
             {
-                update.Append("\"");
-                update.Append(item.Key);
-                update.Append("\"");
+                var remaining = storage.Count;
 
-                if ((--remaining) > 0)
-                    update.Append(", ");
+                update.Append("DELETE FROM `updates` WHERE `name` IN(");
+
+                foreach (var item in storage)
+                {
+                    update.Append("\"");
+                    update.Append(item.Key);
+                    update.Append("\"");
+
+                    if ((--remaining) > 0)
+                        update.Append(", ");
+                }
+
+                update.Append(")");
+
+                // Update database
+                _apply(update.ToString());
             }
-
-            update.Append(")");
-
-            // Update database
-            _apply(update.ToString());
         }
 
         void UpdateState(string name, State state)

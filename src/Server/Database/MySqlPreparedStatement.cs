@@ -242,13 +242,12 @@ namespace Server.Database
             if (value <= Time.UnixEpoch)
                 SetParameter(index, 0U);
             else
-                SetParameter(index, (uint)Time.GetTimestamp(value));
+                SetParameter(index, Time.GetTimestamp(value));
         }
 
         protected void SetParameter(byte index, TimeSpan value)
         {
-            Assert(value.Days <= 34, "Prepared statement {0} cannot set a TimeSpan value {1} that its days is longer than 34", index, value);
-            SetParameter(index, value.ToString(@"d\ hh\:mm\:ss"));
+            SetParameter(index, (uint)value.TotalSeconds);
         }
 
         protected void SetParameter(byte index, ReadOnlySpan<byte> value)
