@@ -139,7 +139,7 @@ namespace Server.AuthServer
                 Stop = true;
             };
 
-            var dbPingInterval = sConfigMgr.GetIntDefault("MaxPingTime", 30) * 1000;
+            var dbPingInterval = sConfigMgr.GetIntDefault("MaxPingTime", 30) * 1000 * 60;
             Timer? mysqlKeepAliveTimer = null;
             mysqlKeepAliveTimer = new Timer((s) =>
             {
