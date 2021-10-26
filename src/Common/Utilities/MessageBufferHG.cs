@@ -3,6 +3,7 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace Common
@@ -14,13 +15,19 @@ namespace Common
         private int _wpos;
         private int _rpos;
 
-        private IntPtr _storage;
+        private void* _storage;
+        private uint _capacity;
         private int _size;
 
         public MessageBufferHG(int initialSize)
         {
-            _storage = Marshal.AllocHGlobal(initialSize);
+            if (initialSize <= 0)
+                throw new ArgumentOutOfRangeException(nameof(initialSize));
+
             _size = initialSize;
+            _capacity = BitOperations.RoundUpToPowerOf2((uint)_size);
+
+            _storage = NativeMemory.Alloc(_capacity);
         }
 
         ~MessageBufferHG()
@@ -34,32 +41,22 @@ namespace Common
         {
             _wpos = right._wpos;
             _rpos = right._rpos;
-
-            _storage = Marshal.AllocHGlobal(right._size);
             _size = right._size;
+            _capacity = BitOperations.RoundUpToPowerOf2((uint)_size);
 
-            Buffer.MemoryCopy((void*)right._storage, (void*)_storage, (long)_size, (long)_size);
-        }
+            _storage = NativeMemory.Alloc(_capacity);
 
-        public IntPtr Move()
-        {
-            _wpos = 0;
-            _rpos = 0;
-            _size = 0;
-
-            var ret = _storage;
-            _storage = IntPtr.Zero;
-
-            return ret;
+            Buffer.MemoryCopy(right._storage, _storage, (ulong)_size, (ulong)_size);
         }
 
         public int Wpos() { return _wpos; }
         public int Rpos() { return _rpos; }
 
-        public ReadOnlySpan<byte> Data() => new ReadOnlySpan<byte>((void*)_storage, _size);
+        public ReadOnlySpan<byte> Data() => new ReadOnlySpan<byte>(_storage, _size);
 
-        public ReadOnlySpan<byte> ReadSpan => new ReadOnlySpan<Byte>((byte*)_storage + _rpos, _wpos - _rpos);
-        public Span<byte> WriteSpan => new Span<byte>((void*)_storage, _size).Slice(_wpos);
+        public Span<byte> GetReadSpan(int size = 0) => new Span<byte>((byte*)_storage + _rpos, size <= 0 ? _wpos - _rpos : size);
+
+        public Span<byte> WriteSpan => new Span<byte>(_storage, _size).Slice(_wpos);
 
         public void Reset()
         {
@@ -69,8 +66,18 @@ namespace Common
 
         public void Resize(int bytes)
         {
-            _storage = Marshal.ReAllocHGlobal(_storage, (IntPtr)bytes);
+            if (bytes <= 0) return;
+
+            if (_capacity >= bytes)
+            {
+                _size = bytes;
+                return;
+            }
+
             _size = bytes;
+            _capacity = BitOperations.RoundUpToPowerOf2((uint)_size);
+
+            _storage = NativeMemory.Realloc(_storage, _capacity);
         }
 
         public void ReadCompleted(int bytes)
@@ -102,8 +109,8 @@ namespace Common
             {
                 if (_rpos != _wpos)
                 {
-                    long size = (long)GetActiveSize();
-                    Buffer.MemoryCopy((byte*)_storage + _rpos, (byte*)_storage, size, size);
+                    var size = (ulong)GetActiveSize();
+                    Buffer.MemoryCopy((byte*)_storage + _rpos, _storage, size, size);
                 }
 
                 _wpos -= _rpos;
@@ -141,7 +148,7 @@ namespace Common
             {
             }
 
-            Marshal.FreeHGlobal(_storage);
+            NativeMemory.Free(_storage);
 
             _disposed = true;
         }

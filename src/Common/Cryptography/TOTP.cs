@@ -86,7 +86,7 @@ namespace Common
 
             int hmacResSize = HMAC_RES_SIZE;
             Span<byte> hmacRes = stackalloc byte[HMAC_RES_SIZE];
-            long timestamp = ((DateTimeOffset)Time.Now).ToUnixTimeSeconds()/30;
+            long timestamp = Time.GetTimestamp(Time.Now)/30;
 
             Span<byte> challenge = stackalloc byte[8];
 
@@ -95,7 +95,7 @@ namespace Common
 
             Base32Decode(base32Key, decoded);
 
-            var hmac = new HMACSHA1(decoded, false);
+            var hmac = new HMACSHA1(decoded);
             hmac.TryComputeHash(challenge, hmacRes, out hmacResSize);
             hmac.Dispose();
 

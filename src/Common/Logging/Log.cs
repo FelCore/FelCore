@@ -416,29 +416,31 @@ namespace Common
             if (string.IsNullOrEmpty(str) || !ShouldLog("entities.player.dump", LOG_LEVEL_INFO))
                 return;
 
-            StringBuilder sb = new StringBuilder();
-            sb.Append("== START DUMP == (account: ");
-            sb.Append(accountId);
-            sb.Append(" guid: ");
-            sb.Append(guid);
-            sb.Append(" name: ");
-            sb.Append(name);
-            sb.Append(")");
-            sb.AppendLine();
-            sb.Append(str);
-            sb.AppendLine();
-            sb.Append("== END DUMP ==");
-            sb.AppendLine();
+            using (var sb = ZString.CreateStringBuilder(true))
+            {
+                sb.Append("== START DUMP == (account: ");
+                sb.Append(accountId);
+                sb.Append(" guid: ");
+                sb.Append(guid);
+                sb.Append(" name: ");
+                sb.Append(name);
+                sb.Append(")");
+                sb.AppendLine();
+                sb.Append(str);
+                sb.AppendLine();
+                sb.Append("== END DUMP ==");
+                sb.AppendLine();
 
-            var msg = new LogMessage(LOG_LEVEL_INFO, "entities.player.dump", sb.ToString());
+                var msg = new LogMessage(LOG_LEVEL_INFO, "entities.player.dump", sb.ToString());
 
-            sb.Clear();
-            sb.Append(guid);
-            sb.Append('_');
-            sb.Append(name);
-            msg.Param1 = sb.ToString();
+                sb.Clear();
+                sb.Append(guid);
+                sb.Append('_');
+                sb.Append(name);
+                msg.Param1 = sb.ToString();
 
-            Write(ref msg);
+                Write(ref msg);
+            }
         }
 
         public static void FEL_LOG_TRACE(string filter, string message)

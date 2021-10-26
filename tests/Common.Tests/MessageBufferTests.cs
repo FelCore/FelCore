@@ -20,10 +20,15 @@ namespace Common.Tests
         [TestMethod]
         public void ShouldResize()
         {
-            var newSize = 1024;
+            var newSize = 1023;
             _buffer.Resize(newSize);
 
-            Assert.AreEqual(newSize, _buffer.Data().Length);
+            Assert.AreEqual(newSize, _buffer.GetBufferSize());
+
+            newSize = 1;
+            _buffer.Resize(newSize);
+
+            Assert.AreEqual(newSize, _buffer.GetBufferSize());
         }
 
         [TestMethod]

@@ -15,10 +15,12 @@ namespace Common
         private int _rpos;
 
         private byte[] _storage;
+        private int _size;
 
         public MessageBuffer(int initialSize)
         {
             _storage = ArrayPool<byte>.Shared.Rent(initialSize);
+            _size = initialSize;
         }
 
         ~MessageBuffer()
@@ -32,9 +34,10 @@ namespace Common
         {
             _wpos = right._wpos;
             _rpos = right._rpos;
+            _size = right._size;
 
-            _storage = ArrayPool<byte>.Shared.Rent(right._storage.Length);
-            Buffer.BlockCopy(right._storage, 0, _storage, 0, right._storage.Length);
+            _storage = ArrayPool<byte>.Shared.Rent(_size);
+            Buffer.BlockCopy(right._storage, 0, _storage, 0, _size);
         }
 
         public int Wpos() { return _wpos; }
@@ -45,7 +48,7 @@ namespace Common
             return _storage;
         }
 
-        public ReadOnlySpan<byte> ReadSpan => _storage.AsSpan(new Range(_rpos, _wpos));
+        public Span<byte> GetReadSpan(int size = 0) => _storage.AsSpan(_rpos, size <= 0 ? _wpos - _rpos : size);
         public Span<byte> WriteSpan => _storage.AsSpan(_wpos);
 
         public void Reset()
@@ -56,12 +59,21 @@ namespace Common
 
         public void Resize(int bytes)
         {
+            if (bytes <= 0) return;
+
+            if (_storage.Length >= bytes)
+            {
+                _size = bytes;
+                return;
+            }
+
             var temp = ArrayPool<byte>.Shared.Rent(bytes);
-            Buffer.BlockCopy(_storage, 0, temp, 0, _storage.Length > temp.Length ? temp.Length : _storage.Length);
+            Buffer.BlockCopy(_storage, 0, temp, 0, _size);
 
             ArrayPool<byte>.Shared.Return(_storage);
 
             _storage = temp;
+            _size = bytes;
         }
 
         public void ReadCompleted(int bytes)
@@ -82,9 +94,9 @@ namespace Common
             return _wpos - _rpos;
         }
 
-        public int GetRemainingSpace() { return _storage.Length - _wpos; }
+        public int GetRemainingSpace() { return _size - _wpos; }
 
-        public int GetBufferSize() { return _storage.Length; }
+        public int GetBufferSize() { return _size; }
 
         // Discards inactive data
         public void Normalize()
@@ -104,7 +116,7 @@ namespace Common
         {
             // resize buffer if it's already full
             if (GetRemainingSpace() == 0)
-                Resize(_storage.Length * 3 / 2);
+                Resize(_size * 3 / 2);
         }
 
         public void Write(ReadOnlySpan<byte> data)

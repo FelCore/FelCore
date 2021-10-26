@@ -16,7 +16,7 @@ namespace Common
 
         public static void SetProcessPriority(string logChannel, int affinity, bool highPriority)
         {
-            if (OperatingSystem.IsMacOS()) // macOS is not supported.
+            if (!OperatingSystem.IsLinux() || !OperatingSystem.IsWindows())
                 return;
 
             var currentProcess = Process.GetCurrentProcess();

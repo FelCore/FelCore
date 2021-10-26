@@ -30,16 +30,16 @@ namespace Common
         TOTAL_LOCALES
     }
 
-    public enum TimeConstants
+    public static class TimeConstants
     {
-        SECOND          = 1,
-        MINUTE          = 60,
-        HOUR            = MINUTE*60,
-        DAY             = HOUR*24,
-        WEEK            = DAY*7,
-        MONTH           = DAY*30,
-        YEAR            = MONTH*12,
-        IN_MILLISECONDS = 1000
+        public const uint SECOND          = 1;
+        public const uint MINUTE          = 60;
+        public const uint HOUR            = MINUTE*60;
+        public const uint DAY             = HOUR*24;
+        public const uint WEEK            = DAY*7;
+        public const uint MONTH           = DAY*30;
+        public const uint YEAR            = MONTH*12;
+        public const uint IN_MILLISECONDS = 1000;
     }
 
     public static class CommonDefs

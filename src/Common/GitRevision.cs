@@ -5,6 +5,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Cysharp.Text;
 
 namespace Common
 {
@@ -17,7 +18,7 @@ namespace Common
         public const string Major = ThisAssembly.Git.SemVer.Major;
         public const string Minor = ThisAssembly.Git.SemVer.Minor;
         public const string Patch = ThisAssembly.Git.SemVer.Patch;
-        public static readonly string FileVersion = $"{Hash}({Major}.{Minor}.{Patch}) {Date} ({Branch})";
+        public static readonly string FileVersion = $"{Hash} {Date} ({Branch} branch)";
         public static readonly string DotnetRuntime;
         public static readonly string OSPlatform;
         public static readonly string FullVersion;
@@ -26,7 +27,7 @@ namespace Common
 
         static GitRevision()
         {
-            DotnetRuntime = string.Format("Runtime: {0} (Mode: {1}) ",
+            DotnetRuntime = ZString.Format("Runtime: {0} (Mode: {1}) ",
                 RuntimeInformation.FrameworkDescription,
                 Environment.Version.Major >= 6 && !RuntimeFeature.IsDynamicCodeSupported ? "NativeAOT" : "JIT"
             );
@@ -43,7 +44,13 @@ namespace Common
             else
                 OSPlatform = "Unix";
 
-            FullVersion = $"FelCore rev. {Hash}({Major}.{Minor}.{Patch}) {Date} ({Branch}) ({OSPlatform})";
+#if DEBUG
+            var buildConfiguration = "Debug";
+#else
+            var buildConfiguration = "Release";
+#endif
+
+            FullVersion = $"FelCore rev. {Hash} {Date} ({Branch} branch) ({OSPlatform}, {buildConfiguration})";
         }
     }
 }

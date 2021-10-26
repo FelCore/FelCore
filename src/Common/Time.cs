@@ -22,10 +22,10 @@ namespace Common
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long GetTimestamp(DateTime time)
+        public static uint GetTimestamp(DateTime time)
         {
             //NOTE time is assumed to be UTC time.
-            return (long)time.Subtract(UnixEpoch).TotalSeconds;
+            return (uint)time.Subtract(UnixEpoch).TotalSeconds;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -36,10 +36,10 @@ namespace Common
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long GetMSTime() => Stopwatch.ElapsedMilliseconds;
+        public static uint GetMSTime() => (uint)Stopwatch.ElapsedMilliseconds;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long GetMSTimeDiff(long oldMSTime, long newMSTime)
+        public static uint GetMSTimeDiff(uint oldMSTime, uint newMSTime)
         {
             // getMSTime() have limited data range and this is case when it overflow in this tick
             if (oldMSTime > newMSTime)
@@ -49,9 +49,53 @@ namespace Common
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long GetMSTimeDiffToNow(long oldMSTime)
+        public static uint GetMSTimeDiffToNow(uint oldMSTime)
         {
             return GetMSTimeDiff(oldMSTime, GetMSTime());
         }
+    }
+
+    public class IntervalTimer
+    {
+        public void Update(long diff)
+        {
+            _current += diff;
+            if (_current < 0)
+                _current = 0;
+        }
+
+        public bool Passed()
+        {
+            return _current >= _interval;
+        }
+
+        public void Reset()
+        {
+            if (_current >= _interval)
+                _current %= _interval;
+        }
+
+        public void SetCurrent(long current)
+        {
+            _current = current;
+        }
+
+        public void SetInterval(long interval)
+        {
+            _interval = interval;
+        }
+
+        public long GetInterval()
+        {
+            return _interval;
+        }
+
+        public long GetCurrent()
+        {
+            return _current;
+        }
+
+        long _interval;
+        long _current;
     }
 }

@@ -10,6 +10,7 @@ using static Common.LogLevel;
 using static Common.AppenderType;
 using static Common.AppenderFlags;
 using static Common.Log;
+using Cysharp.Text;
 
 namespace Common
 {
@@ -139,7 +140,7 @@ namespace Common
             {
                 if (_fileName != null)
                 {
-                    var newFileName = string.Format(_fileName, message.Param1);
+                    var newFileName = ZString.Format(_fileName, message.Param1);
 
                     try
                     {
@@ -148,7 +149,8 @@ namespace Common
 
                         using (var writer = new StreamWriter(file))
                         {
-                            writer.Write(string.Format("{0}{1}", message.Prefix, message.Text));
+                            writer.Write(message.Prefix);
+                            writer.Write(message.Text);
                             writer.Write(Environment.NewLine);
                         }
                         Interlocked.Add(ref _fileSize, message.Size());
@@ -169,7 +171,8 @@ namespace Common
 
             using (var writer = new StreamWriter(_logfile, Encoding.UTF8, -1, true))
             {
-                writer.Write(string.Format("{0}{1}", message.Prefix, message.Text));
+                writer.Write(message.Prefix);
+                writer.Write(message.Text);
                 writer.Write(Environment.NewLine);
             }
 

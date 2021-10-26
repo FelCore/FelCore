@@ -6,6 +6,7 @@ using System;
 using System.Text;
 using static Common.LogLevel;
 using static Common.AppenderFlags;
+using Cysharp.Text;
 
 namespace Common
 {
@@ -56,27 +57,28 @@ namespace Common
             if (_level == LOG_LEVEL_DISABLED || _level > message.Level)
                 return;
 
-            var sb = new StringBuilder();
-
-            if ((_flags & APPENDER_FLAGS_PREFIX_TIMESTAMP) != 0)
+            using (var sb = ZString.CreateStringBuilder(true))
             {
-                sb.Append(message.getTimeStr());
-                sb.Append(" ");
+                if ((_flags & APPENDER_FLAGS_PREFIX_TIMESTAMP) != 0)
+                {
+                    sb.Append(message.getTimeStr());
+                    sb.Append(" ");
+                }
+
+                if ((_flags & APPENDER_FLAGS_PREFIX_LOGLEVEL) != 0 )
+                    sb.AppendFormat("{0,-5} ", GetLogLevelString(message.Level));
+
+                if ((_flags & APPENDER_FLAGS_PREFIX_LOGFILTERTYPE) != 0)
+                {
+                    sb.Append("[");
+                    sb.Append(message.Type);
+                    sb.Append("] ");
+                }
+
+                message.Prefix = sb.ToString();
+
+                _Write(ref message);
             }
-
-            if ((_flags & APPENDER_FLAGS_PREFIX_LOGLEVEL) != 0 )
-                sb.AppendFormat("{0,-5} ", GetLogLevelString(message.Level));
-
-            if ((_flags & APPENDER_FLAGS_PREFIX_LOGFILTERTYPE) != 0)
-            {
-                sb.Append("[");
-                sb.Append(message.Type);
-                sb.Append("] ");
-            }
-
-            message.Prefix = sb.ToString();
-
-            _Write(ref message);
         }
 
         public static string GetLogLevelString(LogLevel level)
