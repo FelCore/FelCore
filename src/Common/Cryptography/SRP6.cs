@@ -3,8 +3,8 @@
 // file 'LICENSE', which is part of this source code package.
 
 using System;
-using System.Buffers;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using static Common.Util;
 using static Common.Errors;
 using static Common.RandomEngine;
@@ -21,8 +21,6 @@ namespace Common
         public static readonly byte[] g = new byte[] { 7 };
         public static readonly byte[] N = HexStrToByteArray("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7", true);
         public static readonly byte[] NgHash = new byte[20];
-
-        static ArrayPool<byte> BufferPool = ArrayPool<byte>.Create();
 
         static SRP6()
         {
@@ -138,7 +136,8 @@ namespace Common
         }
 
         public readonly byte[] Salt;
-        public readonly byte[] B; // B = 3v + g^b
+        void* _ptrB;
+        public ReadOnlySpan<byte> B => new ReadOnlySpan<byte>(_ptrB, 32); // B = 3v + g^b
 
         SHA1Hash _sha1;
         bool _used = false; // a single instance can only be used to verify once
@@ -163,8 +162,8 @@ namespace Common
             _v = new BigInteger(verifier, true);
 
             Salt = salt;
-            B = BufferPool.Rent(32);
-            _B(ref _b, ref _v, B);
+            _ptrB = NativeMemory.Alloc(32);
+            _B(ref _b, ref _v, new Span<byte>(_ptrB, 32));
         }
 
         public byte[]? VerifyChallengeResponse(ReadOnlySpan<byte> A, ReadOnlySpan<byte> clientM)
@@ -202,17 +201,14 @@ namespace Common
             _sha1.Finish();
             _sha1.GetDigest(I);
 
-            // MData = NgHash + I + Salt + A + B + K;
-            Span<byte> MData = stackalloc byte[MDATA_LENGTH];
-            NgHash.AsSpan().CopyTo(MData);
-            I.CopyTo(MData.Slice(20));
-            Salt.AsSpan().CopyTo(MData.Slice(40));
-            A.CopyTo(MData.Slice(72));
-            B.AsSpan().CopyTo(MData.Slice(104));
-            K.AsSpan().CopyTo(MData.Slice(136));
-
             _sha1.Initialize();
-            _sha1.UpdateData(MData);
+            // Payload = NgHash + I + Salt + A + B + K;
+            _sha1.UpdateData(NgHash);
+            _sha1.UpdateData(I);
+            _sha1.UpdateData(Salt);
+            _sha1.UpdateData(A);
+            _sha1.UpdateData(B);
+            _sha1.UpdateData(K);
             _sha1.Finish();
             _sha1.GetDigest(hash);
 
@@ -237,7 +233,11 @@ namespace Common
         {
             if (!_disposed)
             {
-                BufferPool.Return(B, true);
+                if (_ptrB != default)
+                {
+                    NativeMemory.Free(_ptrB);
+                    _ptrB = default;
+                }
 
                 _disposed = true;
             }
