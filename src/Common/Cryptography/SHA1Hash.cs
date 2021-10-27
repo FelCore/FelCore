@@ -64,16 +64,8 @@ namespace Common
             Dispose(false);
         }
 
-        public byte[]? GetDigest()
-        {
-            if (!_hasDigest)
-                return null;
-
-            var ret = new byte[SHA1_DIGEST_LENGTH];
-            GetDigest(ret);
-
-            return ret;
-        }
+        public ReadOnlySpan<byte> GetDigest() =>
+            _hasDigest ? new ReadOnlySpan<byte>(_digest, SHA1_DIGEST_LENGTH) : ReadOnlySpan<byte>.Empty;
 
         public bool GetDigest(Span<byte> destination)
         {

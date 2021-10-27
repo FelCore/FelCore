@@ -107,7 +107,7 @@ namespace Common.Tests
                 stdSha1.TransformBlock(data2, 0, 2, null, 0);
                 stdSha1.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
 
-                CollectionAssert.AreEqual(sha1.GetDigest(), stdSha1.Hash);
+                CollectionAssert.AreEqual(sha1.GetDigest().ToArray(), stdSha1.Hash);
             }
         }
     }
