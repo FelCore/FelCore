@@ -5,7 +5,7 @@
 using System;
 using System.Text;
 using System.Numerics;
-using System.Buffers;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 namespace Common
@@ -14,14 +14,49 @@ namespace Common
     {
         public const int SHA1_DIGEST_LENGTH = 20;
 
-        private SHA1 _sha1;
-        private MessageBuffer? _dataBuffer;
+        public static bool HashData(string str, Span<byte> destination)
+        {
+            return HashData(str, destination, out var _);
+        }
 
-        private bool _disposed;
+        public static bool HashData(string str, Span<byte> destination, out int byteCount)
+        {
+            var count = Encoding.UTF8.GetByteCount(str);
+            void* buff = NativeMemory.Alloc((uint)count);
+
+            Span<byte> dataSpan = new Span<byte>(buff, count);
+            Encoding.UTF8.GetBytes(str, dataSpan);
+
+            try
+            {
+                return HashData(dataSpan, destination, out byteCount);
+            }
+            finally
+            {
+                NativeMemory.Free(buff);
+            }
+        }
+
+        public static bool HashData(ReadOnlySpan<byte> source, Span<byte> destination)
+        {
+            return HashData(source, destination, out var _);
+        }
+
+        public static bool HashData(ReadOnlySpan<byte> source, Span<byte> destination, out int byteCount)
+        {
+            return SHA1.TryHashData(source, destination, out byteCount);
+        }
+
+        MessageBufferHG _dataBuffer;
+        void* _digest;
+        bool _hasDigest;
+
+        bool _disposed;
 
         public SHA1Hash()
         {
-            _sha1 = SHA1.Create();
+            _dataBuffer = new();
+            _digest = NativeMemory.Alloc((uint)SHA1_DIGEST_LENGTH);
         }
 
         ~SHA1Hash()
@@ -29,45 +64,50 @@ namespace Common
             Dispose(false);
         }
 
-        private void EnsureAndResetDataBuffer()
+        public byte[]? GetDigest()
         {
-            if (_dataBuffer == null)
-                _dataBuffer = new();
+            if (!_hasDigest)
+                return null;
 
-            _dataBuffer.Reset();
+            var ret = new byte[SHA1_DIGEST_LENGTH];
+            GetDigest(ret);
+
+            return ret;
         }
 
-        public void UpdateData(params BigInteger[] bigIntegers)
+        public bool GetDigest(Span<byte> destination)
         {
-            EnsureAndResetDataBuffer();
+            if (!_hasDigest)
+                return false;
 
-            int totalBytesCount = 0;
-            foreach(var bn in bigIntegers)
-                totalBytesCount += bn.GetByteCount(true);
+            new Span<byte>(_digest, SHA1_DIGEST_LENGTH).CopyTo(destination);
+            return true;
+        }
 
-            if (_dataBuffer!.GetBufferSize() < totalBytesCount)
-                _dataBuffer.Resize(totalBytesCount);
+        private void EnsureDataBufferHasSpace(int addSize)
+        {
+            if (_dataBuffer.GetRemainingSpace() < addSize)
+            {
+                var diff = addSize - _dataBuffer.GetRemainingSpace();
+                _dataBuffer.Resize(_dataBuffer.GetBufferSize() + diff);
+            }
+        }
+
+        public void UpdateData(BigInteger bigNum)
+        {
+            int totalBytesCount = bigNum.GetByteCount(true);
+
+            EnsureDataBufferHasSpace(totalBytesCount);
 
             int bytesWritten = 0;
-            foreach(var bn in bigIntegers)
-            {
-                bn.TryWriteBytes(_dataBuffer.WriteSpan, out bytesWritten, true);
-                _dataBuffer.WriteCompleted(bytesWritten);
-            }
-
-            _sha1.TransformBlock(_dataBuffer.Data(), 0, _dataBuffer.Wpos(), null, 0);
+            bigNum.TryWriteBytes(_dataBuffer.WriteSpan, out bytesWritten, true);
+            _dataBuffer.WriteCompleted(bytesWritten);
         }
 
         public void UpdateData(ReadOnlySpan<byte> data)
         {
-            EnsureAndResetDataBuffer();
-
-            if (_dataBuffer!.GetBufferSize() < data.Length)
-                _dataBuffer.Resize(data.Length);
-
+            EnsureDataBufferHasSpace(data.Length);
             _dataBuffer.Write(data);
-
-            _sha1.TransformBlock(_dataBuffer.Data(), 0, _dataBuffer.Wpos(), null, 0);
         }
 
         public void UpdateData(string str)
@@ -75,64 +115,24 @@ namespace Common
             if (string.IsNullOrEmpty(str))
                 return;
 
-            EnsureAndResetDataBuffer();
-
             var bytesCount = Encoding.UTF8.GetByteCount(str);
-
-            if (_dataBuffer!.GetBufferSize() < bytesCount)
-                _dataBuffer.Resize(bytesCount);
+            EnsureDataBufferHasSpace(bytesCount);
 
             Encoding.UTF8.GetBytes(str, _dataBuffer.WriteSpan);
             _dataBuffer.WriteCompleted(bytesCount);
-
-            _sha1.TransformBlock(_dataBuffer.Data(), 0, _dataBuffer.Wpos(), null, 0);
         }
 
         public void Initialize()
         {
-            _sha1.Initialize();
+            _hasDigest = false;
+            _dataBuffer.Reset();
         }
 
         public void Finish()
         {
-            _sha1.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            SHA1.HashData(_dataBuffer.GetReadSpan(), new Span<byte>(_digest, SHA1_DIGEST_LENGTH));
+            _hasDigest = true;
         }
-
-        public bool ComputeHash(string str, Span<byte> hash, out int byteCount)
-        {
-            if (string.IsNullOrEmpty(str))
-            {
-                byteCount = 0;
-                return false;
-            }
-
-            var bufferSize = Encoding.UTF8.GetByteCount(str);
-
-            if (bufferSize <= Util.MaxStackLimit)
-            {
-                Span<byte> buffer = stackalloc byte[bufferSize];
-                Encoding.UTF8.GetBytes(str, buffer);
-                return _sha1.TryComputeHash(buffer, hash, out byteCount);
-            }
-            else
-            {
-                var buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
-                Encoding.UTF8.GetBytes(str, 0, str.Length, buffer, 0);
-
-                var ret = _sha1.TryComputeHash(new ReadOnlySpan<byte>(buffer, 0, bufferSize), hash, out byteCount);
-
-                ArrayPool<byte>.Shared.Return(buffer);
-                return ret;
-            }
-        }
-
-        public bool ComputeHash(ReadOnlySpan<byte> buffer, Span<byte> hash, out int byteCount)
-        {
-            return _sha1.TryComputeHash(buffer, hash, out byteCount);
-        }
-
-        public byte[]? Digest => _sha1.Hash;
-        public int Length => _sha1.HashSize / 8;
 
         public void Dispose()
         {
@@ -145,13 +145,12 @@ namespace Common
             if (!_disposed)
             {
                 if (disposing)
+                    _dataBuffer.Dispose();
+
+                if (_digest != default)
                 {
-                    _sha1.Dispose();
-                    if (_dataBuffer != null)
-                    {
-                        _dataBuffer.Dispose();
-                        _dataBuffer = null;
-                    }
+                    NativeMemory.Free(_digest);
+                    _digest = default;
                 }
             }
             _disposed = true;

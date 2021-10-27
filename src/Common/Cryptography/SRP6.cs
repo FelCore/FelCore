@@ -29,16 +29,12 @@ namespace Common
             Span<byte> NHash = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
             Span<byte> gHash = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
 
-            using (var sha1 = new SHA1Hash())
-            {
-                sha1.ComputeHash(N, NHash, out var byteCount1);
-                sha1.Initialize();
-                sha1.ComputeHash(g, gHash, out var byteCount2);
+            SHA1Hash.HashData(N, NHash, out var byteCount1);
+            SHA1Hash.HashData(g, gHash, out var byteCount2);
 
-                // NgHash = H(N) xor H(g)
-                for (var i = 0; i < SHA1Hash.SHA1_DIGEST_LENGTH; i++)
-                    NgHash[i] = (byte)(NHash[i] ^ gHash[i]);
-            }
+            // NgHash = H(N) xor H(g)
+            for (var i = 0; i < SHA1Hash.SHA1_DIGEST_LENGTH; i++)
+                NgHash[i] = (byte)(NHash[i] ^ gHash[i]);
         }
 
         /// <summary>
@@ -72,9 +68,7 @@ namespace Common
             clientM.CopyTo(data.Slice(32));
             K.CopyTo(data.Slice(52));
 
-            var sha = new SHA1Hash();
-            sha.ComputeHash(data, result, out _);
-            sha.Dispose();
+            SHA1Hash.HashData(data, result, out _);
         }
 
         static byte[] CalculateVerifier(string username, string password, ReadOnlySpan<byte> salt)
@@ -85,13 +79,10 @@ namespace Common
             for (var i = 0; i < salt.Length; i++)
                 data[i] = salt[i];
 
-            var sha = new SHA1Hash();
-            sha.ComputeHash($"{username}:{password}", data.Slice(salt.Length), out var byteCount);
-
-            sha.Initialize();
+            SHA1Hash.HashData($"{username}:{password}", data.Slice(salt.Length), out var byteCount);
 
             Span<byte> hash = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
-            sha.ComputeHash(data, hash, out byteCount);
+            SHA1Hash.HashData(data, hash, out byteCount);
 
             var result = new byte[32];
             BigInteger.ModPow(_g, new BigInteger(hash, true), _N).TryWriteBytes(result, out var _, true);
@@ -120,9 +111,14 @@ namespace Common
             Span<byte> hash1 = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
 
             _sha1.Initialize();
-            _sha1.ComputeHash(buf0.Slice(p, EPHEMERAL_KEY_LENGTH / 2 - p), hash0, out var byteCount1);
+            _sha1.UpdateData(buf0.Slice(p, EPHEMERAL_KEY_LENGTH / 2 - p));
+            _sha1.Finish();
+            _sha1.GetDigest(hash0);
+
             _sha1.Initialize();
-            _sha1.ComputeHash(buf1.Slice(p, EPHEMERAL_KEY_LENGTH / 2 - p), hash1, out var byteCount2);
+            _sha1.UpdateData(buf1.Slice(p, EPHEMERAL_KEY_LENGTH / 2 - p));
+            _sha1.Finish();
+            _sha1.GetDigest(hash1);
 
             // stick the two hashes back together
             byte[] K = new byte[SESSION_KEY_LENGTH];
@@ -187,10 +183,12 @@ namespace Common
             for (var i = 32; i < EPHEMERAL_KEY_LENGTH * 2; i++)
                 dataAB[i] = B[i % 32];
 
-            _sha1.Initialize();
-
             Span<byte> hash = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
-            _sha1.ComputeHash(dataAB, hash, out _);
+            _sha1.Initialize();
+            _sha1.UpdateData(dataAB);
+            _sha1.Finish();
+            _sha1.GetDigest(hash);
+
             var u = new BigInteger(hash, true);
 
             Span<byte> S = stackalloc byte[32];
@@ -200,7 +198,9 @@ namespace Common
 
             Span<byte> I = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
             _sha1.Initialize();
-            _sha1.ComputeHash(_username, I, out _);
+            _sha1.UpdateData(_username);
+            _sha1.Finish();
+            _sha1.GetDigest(I);
 
             // MData = NgHash + I + Salt + A + B + K;
             Span<byte> MData = stackalloc byte[MDATA_LENGTH];
@@ -212,7 +212,9 @@ namespace Common
             K.AsSpan().CopyTo(MData.Slice(136));
 
             _sha1.Initialize();
-            _sha1.ComputeHash(MData, hash, out _);
+            _sha1.UpdateData(MData);
+            _sha1.Finish();
+            _sha1.GetDigest(hash);
 
             if (clientM.SequenceEqual(hash))
                 return K;

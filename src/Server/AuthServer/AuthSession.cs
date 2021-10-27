@@ -738,7 +738,12 @@ namespace Server.AuthServer
             bool r2Match = false;
 
             fixed(byte* r2Ptr = reconnectProof.R2)
-                r2Match = new ReadOnlySpan<byte>(r2Ptr, 20).SequenceEqual(_sha1.Digest);
+            {
+                Span<byte> digest = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
+                _sha1.GetDigest(digest);
+
+                r2Match = new ReadOnlySpan<byte>(r2Ptr, 20).SequenceEqual(digest);
+            }
 
             if (r2Match)
             {
@@ -920,7 +925,9 @@ namespace Server.AuthServer
 
             Span<byte> hash = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
             _sha1.Initialize();
-            _sha1.ComputeHash(data, hash, out _);
+            _sha1.UpdateData(data);
+            _sha1.Finish();
+            _sha1.GetDigest(hash);
 
             return versionProof.SequenceEqual(hash);
         }

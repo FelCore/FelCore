@@ -7,6 +7,7 @@ using System.IO;
 using System.Text;
 using System.Diagnostics;
 using System.Net;
+using System.Security.Cryptography;
 using static Common.Log;
 using static Common.Errors;
 
@@ -78,8 +79,7 @@ namespace Common
 
         public static void DigestSHA1(string str, Span<byte> hash, out int byteCount)
         {
-            using (var sha1 = new SHA1Hash())
-                sha1.ComputeHash(str, hash, out byteCount);
+            SHA1Hash.HashData(str, hash, out byteCount);
         }
 
         public static byte[] DigestSHA1(ReadOnlySpan<byte> data)
@@ -92,8 +92,7 @@ namespace Common
 
         public static void DigestSHA1(ReadOnlySpan<byte> data, Span<byte> hash, out int byteCount)
         {
-            using (var sha1 = new SHA1Hash())
-                sha1.ComputeHash(data, hash, out byteCount);
+            SHA1Hash.HashData(data, hash, out byteCount);
         }
 
         public static int StartProcess(string executable, string args, string logger, string inputFile, bool secure)
