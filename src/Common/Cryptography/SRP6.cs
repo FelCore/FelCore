@@ -147,8 +147,6 @@ namespace Common
         BigInteger _b; // b - randomly chosen by the server, 19 bytes, never given out
         BigInteger _v; // v - the user's password verifier, derived from s + H(USERNAME || ":" || PASSWORD)
 
-        const int MDATA_LENGTH = 20 + 20 + 32 + 32 + 32 + 40;
-
         bool _disposed;
 
         public SRP6(string username, byte[] salt, ReadOnlySpan<byte> verifier, SHA1Hash sha1)
