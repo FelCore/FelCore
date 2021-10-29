@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using static Common.Util;
 using static Common.Errors;
 using static Common.RandomEngine;
+using Common.Extensions;
 
 namespace Common
 {
@@ -83,7 +84,7 @@ namespace Common
             SHA1Hash.HashData(data, hash, out byteCount);
 
             var result = new byte[32];
-            BigInteger.ModPow(_g, new BigInteger(hash, true), _N).TryWriteBytes(result, out var _, true);
+            _g.ModPow(new BigInteger(hash, true), _N).TryWriteBytes(result, out var _, true);
 
             return result;
         }
@@ -132,7 +133,7 @@ namespace Common
         static BigInteger _N = new BigInteger(N, true); // the modulus, an algorithm parameter; all operations are mod this
         static void _B(ref BigInteger b, ref BigInteger v, Span<byte> result)
         {
-            ((BigInteger.ModPow(_g, b, _N) + (v * 3)) % _N).TryWriteBytes(result, out var _, true);
+            ((_g.ModPow(b, _N) + (v * 3)) % _N).TryWriteBytes(result, out var _, true);
         }
 
         public readonly byte[] Salt;
@@ -174,22 +175,17 @@ namespace Common
                 return null;
 
             // EphemeralKey A + B
-            Span<byte> dataAB = stackalloc byte[EPHEMERAL_KEY_LENGTH * 2];
-            for (var i = 0; i < EPHEMERAL_KEY_LENGTH; i++)
-                dataAB[i] = A[i];
-            for (var i = 32; i < EPHEMERAL_KEY_LENGTH * 2; i++)
-                dataAB[i] = B[i % 32];
-
             Span<byte> hash = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
             _sha1.Initialize();
-            _sha1.UpdateData(dataAB);
+            _sha1.UpdateData(A);
+            _sha1.UpdateData(B);
             _sha1.Finish();
             _sha1.GetDigest(hash);
 
             var u = new BigInteger(hash, true);
 
             Span<byte> S = stackalloc byte[32];
-            BigInteger.ModPow(_A * BigInteger.ModPow(_v, u, _N), _b, _N).TryWriteBytes(S, out _, true);
+            (_A * _v.ModPow(u, _N)).ModPow(_b, _N).TryWriteBytes(S, out _, true);
 
             var K = SHA1Interleave(S);
 
