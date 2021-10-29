@@ -161,7 +161,7 @@ namespace Common
             _v = new BigInteger(verifier, true);
 
             Salt = salt;
-            _ptrB = NativeMemory.Alloc(32);
+            _ptrB = NativeMemory.AllocZeroed(32);
             _B(ref _b, ref _v, new Span<byte>(_ptrB, 32));
         }
 
