@@ -9,8 +9,12 @@ https://discord.gg/dXYY2QYmAG
 ## Current Progress
 
 - AuthServer  ✅
-- WorldServer WIP
+- WorldServer 🚧
 
 ## Supported client builds
 
 - 2.4.3.8606
+
+## Credits
+
+- [TrinityCore](https://github.com/TrinityCore/TrinityCore)
