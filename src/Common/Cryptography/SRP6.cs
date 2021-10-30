@@ -90,43 +90,36 @@ namespace Common
         }
         byte[] SHA1Interleave(ReadOnlySpan<byte> S)
         {
-            // split S into two buffers
-            Span<byte> buf0 = stackalloc byte[EPHEMERAL_KEY_LENGTH / 2];
-            Span<byte> buf1 = stackalloc byte[EPHEMERAL_KEY_LENGTH / 2];
-            for (int i = 0; i < EPHEMERAL_KEY_LENGTH / 2; ++i)
+            Span<byte> SPart0 = stackalloc byte[16];
+            Span<byte> SPart1 = stackalloc byte[16];
+
+            for (int i = 0; i < 16; i++)
             {
-                buf0[i] = S[2 * i + 0];
-                buf1[i] = S[2 * i + 1];
+                SPart0[i] = S[i * 2];
+                SPart1[i] = S[i * 2 + 1];
             }
 
-            // find position of first nonzero byte
-            int p = 0;
-            while (p < EPHEMERAL_KEY_LENGTH && S[p] == 0) ++p;
-            if ((p & 1) == 1) ++p; // skip one extra byte if p is odd
-            p /= 2; // offset into buffers
-
-            // hash each of the halves, starting at the first nonzero byte
-            Span<byte> hash0 = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
-            Span<byte> hash1 = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
+            Span<byte> hEven = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
+            Span<byte> hOdd = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
 
             _sha1.Initialize();
-            _sha1.UpdateData(buf0.Slice(p, EPHEMERAL_KEY_LENGTH / 2 - p));
+            _sha1.UpdateData(SPart0);
             _sha1.Finish();
-            _sha1.GetDigest(hash0);
+            _sha1.GetDigest(hEven);
 
             _sha1.Initialize();
-            _sha1.UpdateData(buf1.Slice(p, EPHEMERAL_KEY_LENGTH / 2 - p));
+            _sha1.UpdateData(SPart1);
             _sha1.Finish();
-            _sha1.GetDigest(hash1);
+            _sha1.GetDigest(hOdd);
 
-            // stick the two hashes back together
-            byte[] K = new byte[SESSION_KEY_LENGTH];
+            var K = new byte[40];
 
-            for (var i = 0; i < SHA1Hash.SHA1_DIGEST_LENGTH; ++i)
+            for (int i = 0; i < 20; i++)
             {
-                K[2 * i + 0] = hash0[i];
-                K[2 * i + 1] = hash1[i];
+                K[i * 2] = hEven[i];
+                K[i * 2 + 1] = hOdd[i];
             }
+
             return K;
         }
         static BigInteger _g = new BigInteger(g, true); // a [g]enerator for the ring of integers mod N, algorithm parameter
