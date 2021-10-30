@@ -87,13 +87,10 @@ namespace Common
 
         public void UpdateData(BigInteger bigNum)
         {
-            int totalBytesCount = bigNum.GetByteCount(true);
+            var data = bigNum.ToByteArray();
 
-            EnsureDataBufferHasSpace(totalBytesCount);
-
-            int bytesWritten = 0;
-            bigNum.TryWriteBytes(_dataBuffer.WriteSpan, out bytesWritten, true);
-            _dataBuffer.WriteCompleted(bytesWritten);
+            EnsureDataBufferHasSpace(data.Length);
+            _dataBuffer.Write(data);
         }
 
         public void UpdateData(ReadOnlySpan<byte> data)

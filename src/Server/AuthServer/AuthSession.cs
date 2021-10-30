@@ -724,13 +724,10 @@ namespace Server.AuthServer
             if (string.IsNullOrEmpty(_accountInfo.Login))
                 return false;
 
-            BigInteger t1;
-            fixed(byte* r1Ptr = reconnectProof.R1)
-                t1 = new(new ReadOnlySpan<byte>(r1Ptr, 16), true);
-
             _sha1.Initialize();
             _sha1.UpdateData(_accountInfo.Login);
-            _sha1.UpdateData(t1);
+            fixed(byte* r1Ptr = reconnectProof.R1)
+                _sha1.UpdateData(new ReadOnlySpan<byte>(r1Ptr, 16));
             _sha1.UpdateData(_reconnectProof!);
             _sha1.UpdateData(_sessionKey!);
             _sha1.Finish();
