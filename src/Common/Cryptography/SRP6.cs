@@ -202,7 +202,16 @@ namespace Common
             if (clientM.SequenceEqual(hash))
                 return K;
             else
+            {
+                Console.WriteLine("=================================");
+                Console.WriteLine("Received A {0}", _A);
+                Console.WriteLine("Received B {0}", new BigInteger(B, true));
+                Console.WriteLine("Received u {0}", u);
+                Console.WriteLine("Received S {0}", new BigInteger(S, true));
+                Console.WriteLine(Util.ByteArrayToHexStr(K));
+                Console.WriteLine("*===============================*");
                 return null;
+            }
         }
 
         ~SRP6()
