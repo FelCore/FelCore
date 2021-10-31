@@ -8,6 +8,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using Common;
 using Common.Extensions;
 using static Common.Log;
@@ -916,13 +917,11 @@ namespace Server.AuthServer
                     return true;                                                            // not filled serverside
             }
 
-            Span<byte> data = stackalloc byte[a.Length + versionHash.Length];
-            a.CopyTo(data);
-            versionHash.CopyTo(data.Slice(a.Length));
-
             Span<byte> hash = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
+
             _sha1.Initialize();
-            _sha1.UpdateData(data);
+            _sha1.UpdateData(a);
+            _sha1.UpdateData(versionHash);
             _sha1.Finish();
             _sha1.GetDigest(hash);
 
