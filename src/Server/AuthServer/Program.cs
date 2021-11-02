@@ -30,10 +30,13 @@ namespace Server.AuthServer
 
             var stmt = DB.LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT);
 
+            Span<byte> salt = stackalloc byte[32];
+            Span<byte> verifier = stackalloc byte[32];
+
             stmt.Parameters[0] = username;
-            var data = SRP6.MakeRegistrationData(username, password);
-            stmt.Parameters[1] = data.Item1; // salt
-            stmt.Parameters[2] = data.Item2; // verifier
+            var data = SRP6.MakeRegistrationData(username, password, salt, verifier);
+            stmt.Parameters[1] = salt.ToArray(); // salt
+            stmt.Parameters[2] = verifier.ToArray(); // verifier
             stmt.Parameters[3] = email;
             stmt.Parameters[4] = email;
 

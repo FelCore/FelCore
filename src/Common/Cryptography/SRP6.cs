@@ -39,14 +39,14 @@ namespace Common
         /// <summary>
         /// username + password must be converted to upcase FIRST!
         /// </summary>
-        public static (byte[], byte[]) MakeRegistrationData(string username, string password)
+        public static bool MakeRegistrationData(string username, string password, Span<byte> salt, Span<byte> verifier)
         {
-            (byte[], byte[]) res;
-            res.Item1 = new byte[32];
+            if (salt.Length < SALT_LENGTH)
+                return false;
 
-            GetRandomBytes(res.Item1); // random salt
-            res.Item2 = CalculateVerifier(username, password, res.Item1);
-            return res;
+            GetRandomBytes(salt); // random salt
+            CalculateVerifier(username, password, salt, verifier);
+            return true;
         }
 
         /// <summary>
@@ -54,7 +54,9 @@ namespace Common
         /// </summary>
         public static bool CheckLogin(string username, string password, ReadOnlySpan<byte> salt, ReadOnlySpan<byte> verifier)
         {
-            return verifier.SequenceEqual(CalculateVerifier(username, password, salt));
+            Span<byte> result = stackalloc byte[32];
+            CalculateVerifier(username, password, salt, result);
+            return verifier.SequenceEqual(result);
         }
 
         public static void GetSessionVerifier(ReadOnlySpan<byte> A, ReadOnlySpan<byte> clientM, ReadOnlySpan<byte> K, Span<byte> result)
@@ -70,7 +72,7 @@ namespace Common
             SHA1Hash.HashData(data, result, out _);
         }
 
-        static byte[] CalculateVerifier(string username, string password, ReadOnlySpan<byte> salt)
+        static void CalculateVerifier(string username, string password, ReadOnlySpan<byte> salt, Span<byte> verifier)
         {
             // v = g ^ H(s || H(u || ':' || p)) mod N
 
@@ -83,10 +85,7 @@ namespace Common
             Span<byte> hash = stackalloc byte[SHA1Hash.SHA1_DIGEST_LENGTH];
             SHA1Hash.HashData(data, hash, out byteCount);
 
-            var result = new byte[32];
-            _g.ModPow(new BigInteger(hash, true), _N).TryWriteBytes(result, out var _, true);
-
-            return result;
+            _g.ModPow(new BigInteger(hash, true), _N).TryWriteBytes(verifier, out var bytesWritten, true);
         }
         byte[] SHA1Interleave(ReadOnlySpan<byte> S)
         {
